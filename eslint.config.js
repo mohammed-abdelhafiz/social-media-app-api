@@ -23,7 +23,7 @@ module.exports = tseslint.config({
   rules: {
     "@typescript-eslint/no-explicit-any": "warn",
     "@typescript-eslint/no-unused-vars": ["warn"],
-    "no-console": "warn",
+    "no-console": "off",
     "prettier/prettier": "off",
   },
 });

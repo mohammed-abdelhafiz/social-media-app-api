@@ -5,7 +5,7 @@ const PostSchema = new mongoose.Schema({
   title: { type: String, required: true },
   content: { type: String, required: true },
   comments: [{ type: mongoose.Schema.Types.ObjectId, ref: "Comment" }],
-  likes: { type: Number, default: 0 },
+  likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   shares: { type: Number, default: 0 },
 });
 

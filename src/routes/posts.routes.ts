@@ -5,12 +5,12 @@ import authenticate from "../middlewares/authenticate";
 const router = Router();
 
 //routes
+
 /**
  * @route GET /api/posts
  * @desc Get all posts
  * @access Public
  */
-
 router.get("/", postsController.getAllPosts);
 
 /**
@@ -40,5 +40,19 @@ router.put("/:id", authenticate, postsController.updatePost);
  * @access Private (Requires authentication and ownership)
  */
 router.delete("/:id", authenticate, postsController.deletePost);
+
+/**
+ * @route POST /api/posts/:id/like
+ * @desc Like a post
+ * @access Private (Requires authentication)
+ */
+router.post("/:id/like", authenticate, postsController.likePost);
+
+/**
+ * @route POST /api/posts/:id/share
+ * @desc Share a post
+ * @access Private (Requires authentication)
+ */
+router.post("/:id/share", authenticate, postsController.sharePost);
 
 export default router;

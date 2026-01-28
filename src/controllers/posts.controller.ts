@@ -65,4 +65,27 @@ const deletePost = async (req: Request, res: Response) => {
   res.status(200).json({ message: "Post deleted successfully" });
 };
 
-export default { getAllPosts, createPost, updatePost, getPostById, deletePost };
+const likePost = async (req: Request, res: Response) => {
+  const postId = req.params.id as string;
+  //@ts-ignore
+  const userId = req.user.id;
+
+  await postsService.likePost(postId, userId);
+  res.status(200).json({ message: "Post liked successfully" });
+};
+
+const sharePost = async (req: Request, res: Response) => {
+  const postId = req.params.id as string;
+  await postsService.sharePost(postId);
+  res.status(200).json({ message: "Post shared successfully" });
+};
+
+export default {
+  getAllPosts,
+  createPost,
+  updatePost,
+  getPostById,
+  deletePost,
+  likePost,
+  sharePost,
+};

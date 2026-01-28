@@ -32,9 +32,9 @@ const userSchema = new mongoose.Schema(
       trim: true,
       minLength: 6,
     },
-    refreshToken: {
-      type: String,
-      default: null,
+    tokenVersion: {
+      type: Number,
+      default: 0,
     },
   },
   {
@@ -51,6 +51,7 @@ userSchema.methods.toJSON = function () {
   const user = this.toObject();
   delete user.password;
   delete user.refreshToken;
+  delete user.__v;
   return user;
 };
 

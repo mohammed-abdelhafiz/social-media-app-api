@@ -1,7 +1,8 @@
 import express from "express";
-import authRoutes from "./routes/auth.routes";
 import errorHandler from "./middlewares/errorHandler.middleware";
 import cookieParser from "cookie-parser";
+import authRoutes from "./routes/auth.routes";
+import postsRoutes from "./routes/posts.routes";
 // Initialize app
 const app = express();
 
@@ -11,6 +12,7 @@ app.use(cookieParser());
 
 // mount routes
 app.use("/api/auth", authRoutes);
+app.use("/api/posts", postsRoutes);
 
 
 // error handler

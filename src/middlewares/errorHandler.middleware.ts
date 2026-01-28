@@ -12,43 +12,37 @@ const errorHandler = (
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _next: NextFunction
 ) => {
+  console.log("Error caught by errorHandler middleware:", err);
   if (err instanceof z.ZodError) {
     res.status(400).json({
-      success: false,
+      status: "fail",
       error: {
         path: err.issues[0].path[0],
         message: err.issues[0].message,
       },
     });
-    console.log(err);
   } else if (err instanceof Error && (err as ErrorWithCode).code === 11000) {
     const path = Object.keys((err as ErrorWithKeyPattern).keyPattern)[0];
     res.status(400).json({
-      success: false,
+      status: "fail",
       error: {
-        path,
         message: `${path} already exists`,
       },
     });
-    console.log(err);
   } else if (err instanceof AppError) {
     res.status(err.statusCode).json({
-      success: false,
+      status: "fail",
       error: {
-        path: err.path,
         message: err.message,
       },
     });
-    console.log(err);
   } else if (err instanceof Error) {
     res.status(500).json({
-      success: false,
+      status: "error",
       error: {
-        path: "internal",
         message: err.message || "Internal server error",
       },
     });
-    console.log(err);
   }
 };
 

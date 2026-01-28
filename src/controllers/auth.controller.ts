@@ -14,7 +14,6 @@ const register = async (req: Request, res: Response) => {
     maxAge: 7 * 24 * 60 * 60 * 1000, //7 days
   });
   res.status(201).json({
-    success: true,
     message: "User registered successfully",
     data: {
       user: result.user,
@@ -33,7 +32,6 @@ const login = async (req: Request, res: Response) => {
     maxAge: 7 * 24 * 60 * 60 * 1000, //7 days
   });
   res.status(200).json({
-    success: true,
     message: "User logged in successfully",
     data: {
       user: result.user,
@@ -44,11 +42,10 @@ const login = async (req: Request, res: Response) => {
 
 export const logout = async (req: Request, res: Response) => {
   res.clearCookie("refreshToken");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const user = (req as any).user;
+  // @ts-ignore
+  const user = req.user;
   await authService.logout(user.id);
   res.status(200).json({
-    success: true,
     message: "User logged out successfully",
   });
 };
@@ -56,17 +53,11 @@ export const logout = async (req: Request, res: Response) => {
 const refreshAccessToken = async (req: Request, res: Response) => {
   const refreshToken = req.cookies?.refreshToken;
   if (!refreshToken) {
-    throw new AppError("No refresh token provided", 401, "refreshToken");
+    throw new AppError("No refresh token provided", 401);
   }
   const decodedToken = verifyRefreshToken(refreshToken);
-  if (!decodedToken) {
-    throw new AppError("Invalid refresh token", 401, "refreshToken");
-  }
-  const {
-    user,
-    accessToken: newAccessToken,
-    refreshToken: newRefreshToken,
-  } = await authService.refreshAccessToken(decodedToken.id);
+  const { newAccessToken, newRefreshToken } =
+    await authService.refreshAccessToken(decodedToken);
   res.cookie("refreshToken", newRefreshToken, {
     httpOnly: true,
     secure: true,
@@ -74,10 +65,8 @@ const refreshAccessToken = async (req: Request, res: Response) => {
     maxAge: 7 * 24 * 60 * 60 * 1000, //7 days
   });
   res.status(200).json({
-    success: true,
     message: "Token refreshed successfully",
     data: {
-      user,
       accessToken: newAccessToken,
     },
   });

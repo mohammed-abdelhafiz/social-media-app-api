@@ -70,8 +70,8 @@ const likePost = async (req: Request, res: Response) => {
   //@ts-ignore
   const userId = req.user.id;
 
-  await postsService.likePost(postId, userId);
-  res.status(200).json({ message: "Post liked successfully" });
+  const message = await postsService.likePost(postId, userId);
+  res.status(200).json({ message });
 };
 
 const sharePost = async (req: Request, res: Response) => {

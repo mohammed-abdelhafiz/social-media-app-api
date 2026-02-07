@@ -1,80 +1,140 @@
 import type { Request, Response } from "express";
 import postsService from "../services/posts.service";
-import { createPostSchema, updatePostSchema } from "../schemas/posts.schema";
+import {
+  createCommentSchema,
+  createPostSchema,
+  updateCommentSchema,
+  updatePostSchema,
+} from "../schemas/posts.schema";
 import AppError from "../utils/AppError";
 
-const getAllPosts = async (req: Request, res: Response) => {
+const getAllPosts = async (_req: Request, res: Response) => {
   const posts = await postsService.getAllPosts();
-  res.json(posts);
+  res.status(200).json(posts);
 };
 
 const getPostById = async (req: Request, res: Response) => {
-  const postId = req.params.id as string;
+  const postId = req.params.postId as string;
+
   const post = await postsService.getPostById(postId);
   if (!post) {
     throw new AppError("Post not found", 404);
   }
-  res.json(post);
+
+  res.status(200).json(post);
 };
 
 const createPost = async (req: Request, res: Response) => {
   const { content } = createPostSchema.parse(req.body);
   const userId = req.JwtPayload.userId;
+
   const newPost = await postsService.createPost({ content, userId });
-  res.status(201).json({ message: "Post created successfully", data: newPost });
+
+  res.status(201).json({
+    message: "Post created successfully",
+    data: newPost,
+  });
 };
 
 const updatePost = async (req: Request, res: Response) => {
-  const postId = req.params.id as string;
-  const userId = req.JwtPayload.userId;
-
-  const post = await postsService.getPostById(postId);
-
-  if (!post) {
-    throw new AppError("Post not found", 404);
-  }
-
-  if (post.userId.toString() !== userId) {
-    throw new AppError("Unauthorized to update this post", 403);
-  }
-
+  const postId = req.params.postId as string;
   const parsedBody = updatePostSchema.parse(req.body);
 
   const updatedPost = await postsService.updatePost(postId, parsedBody);
 
-  res
-    .status(200)
-    .json({ message: "Post updated successfully", data: updatedPost });
+  res.status(200).json({
+    message: "Post updated successfully",
+    data: updatedPost,
+  });
 };
 
 const deletePost = async (req: Request, res: Response) => {
-  const postId = req.params.id as string;
-  const userId = req.JwtPayload.userId;
-  const post = await postsService.getPostById(postId);
+  const postId = req.params.postId as string;
 
-  if (!post) {
-    throw new AppError("Post not found", 404);
-  }
-  if (post.userId.toString() !== userId) {
-    throw new AppError("Unauthorized to delete this post", 403);
-  }
   await postsService.deletePost(postId);
+
   res.status(200).json({ message: "Post deleted successfully" });
 };
 
 const likePost = async (req: Request, res: Response) => {
-  const postId = req.params.id as string;
+  const postId = req.params.postId as string;
   const userId = req.JwtPayload.userId;
 
   const message = await postsService.likePost(postId, userId);
+
   res.status(200).json({ message });
+};
+
+// =======================
+// COMMENTS
+// =======================
+
+const createComment = async (req: Request, res: Response) => {
+  const postId = req.params.postId as string;
+  const userId = req.JwtPayload.userId;
+  const parsedBody = createCommentSchema.parse(req.body);
+
+  const comment = await postsService.createComment(
+    postId,
+    parsedBody,
+    userId
+  );
+
+  res.status(201).json({
+    message: "Comment added successfully",
+    data: comment,
+  });
+};
+
+const getPostComments = async (req: Request, res: Response) => {
+  const postId = req.params.postId as string;
+
+  const comments = await postsService.getPostComments(postId);
+
+  res.status(200).json({
+    message: "Comments fetched successfully",
+    data: comments,
+  });
+};
+
+const updateComment = async (req: Request, res: Response) => {
+  const postId = req.params.postId as string;
+  const commentId = req.params.commentId as string;
+  const parsedBody = updateCommentSchema.parse(req.body);
+
+  const comment = await postsService.updateComment(
+    postId,
+    commentId,
+    parsedBody
+  );
+
+  res.status(200).json({
+    message: "Comment updated successfully",
+    data: comment,
+  });
+};
+
+const deleteComment = async (req: Request, res: Response) => {
+  const postId = req.params.postId as string;
+  const commentId = req.params.commentId as string;
+
+  const comment = await postsService.deleteComment(postId, commentId);
+
+  res.status(200).json({
+    message: "Comment deleted successfully",
+    data: comment,
+  });
 };
 
 export default {
   getAllPosts,
+  getPostById,
   createPost,
   updatePost,
-  getPostById,
   deletePost,
   likePost,
+  createComment,
+  getPostComments,
+  updateComment,
+  deleteComment,
 };

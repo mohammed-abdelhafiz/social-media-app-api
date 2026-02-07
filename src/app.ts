@@ -14,7 +14,6 @@ app.use(cookieParser());
 app.use("/api/auth", authRoutes);
 app.use("/api/posts", postsRoutes);
 
-
 // error handler
 app.use(errorHandler);
 

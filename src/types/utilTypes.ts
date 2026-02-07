@@ -1,4 +1,6 @@
+import mongoose from "mongoose";
+
 export interface JwtPayload {
-  userId: string;
+  userId: mongoose.Types.ObjectId;
   tokenVersion: number;
 }

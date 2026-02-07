@@ -3,14 +3,14 @@ import User from "../models/User.model";
 import { LoginBody, RegisterBody } from "../schemas/auth.schema";
 import AppError from "../utils/AppError";
 import { generateAccessToken, generateRefreshToken } from "../utils/token";
-import { JwtPayload } from "../utils/types";
+import { JwtPayload } from "../types/utilTypes";
 
 const register = async (body: RegisterBody) => {
   const user = await User.create(body);
   const tokenVersion = 0; // Initial token version
   user.tokenVersion = tokenVersion;
   await user.save();
-  
+
   const accessToken = generateAccessToken({
     userId: user._id.toString(),
     tokenVersion,
@@ -44,7 +44,6 @@ const login = async (body: LoginBody) => {
     userId: user._id.toString(),
     tokenVersion: user.tokenVersion,
   });
-  await user.save();
   return {
     user,
     accessToken,
@@ -63,10 +62,7 @@ const logout = async (userId: string) => {
 
 const refreshAccessToken = async (decodedToken: JwtPayload) => {
   const user = await User.findById(decodedToken.userId);
-  if (!user) {
-    throw new AppError("User not found", 404);
-  }
-  if (user.tokenVersion !== decodedToken.tokenVersion) {
+  if (!user || user.tokenVersion !== decodedToken.tokenVersion) {
     throw new AppError("Invalid refresh token", 401);
   }
   const newAccessToken = generateAccessToken({
@@ -77,7 +73,6 @@ const refreshAccessToken = async (decodedToken: JwtPayload) => {
     userId: user._id.toString(),
     tokenVersion: user.tokenVersion,
   });
-  await user.save();
   return {
     newAccessToken,
     newRefreshToken,

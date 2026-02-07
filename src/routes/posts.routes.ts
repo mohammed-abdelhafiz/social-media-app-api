@@ -48,11 +48,5 @@ router.delete("/:id", authenticate, postsController.deletePost);
  */
 router.post("/:id/like", authenticate, postsController.likePost);
 
-/**
- * @route POST /api/posts/:id/share
- * @desc Share a post
- * @access Private (Requires authentication)
- */
-router.post("/:id/share", authenticate, postsController.sharePost);
 
 export default router;

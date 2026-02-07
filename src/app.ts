@@ -1,5 +1,5 @@
 import express from "express";
-import errorHandler from "./middlewares/errorHandler.middleware";
+import errorHandler from "./middlewares/errorHandler";
 import cookieParser from "cookie-parser";
 import authRoutes from "./routes/auth.routes";
 import postsRoutes from "./routes/posts.routes";

@@ -2,17 +2,12 @@ import type { Request, Response } from "express";
 import { loginSchema, registerSchema } from "../schemas/auth.schema";
 import authService from "../services/auth.service";
 import AppError from "../utils/AppError";
-import { verifyRefreshToken } from "../utils/token";
+import { SetRefreshTokenCookie, verifyRefreshToken } from "../utils/token";
 
 const register = async (req: Request, res: Response) => {
   const parsedBody = registerSchema.parse(req.body);
   const result = await authService.register(parsedBody);
-  res.cookie("refreshToken", result.refreshToken, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "none",
-    maxAge: 7 * 24 * 60 * 60 * 1000, //7 days
-  });
+  SetRefreshTokenCookie(res, result.refreshToken);
   res.status(201).json({
     message: "User registered successfully",
     data: {
@@ -25,12 +20,7 @@ const register = async (req: Request, res: Response) => {
 const login = async (req: Request, res: Response) => {
   const parsedBody = loginSchema.parse(req.body);
   const result = await authService.login(parsedBody);
-  res.cookie("refreshToken", result.refreshToken, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "none",
-    maxAge: 7 * 24 * 60 * 60 * 1000, //7 days
-  });
+  SetRefreshTokenCookie(res, result.refreshToken);
   res.status(200).json({
     message: "User logged in successfully",
     data: {
@@ -42,9 +32,8 @@ const login = async (req: Request, res: Response) => {
 
 export const logout = async (req: Request, res: Response) => {
   res.clearCookie("refreshToken");
-  // @ts-ignore
-  const user = req.user;
-  await authService.logout(user.id);
+  const userId = req.JwtPayload.userId;
+  await authService.logout(userId);
   res.status(200).json({
     message: "User logged out successfully",
   });
@@ -58,12 +47,7 @@ const refreshAccessToken = async (req: Request, res: Response) => {
   const decodedToken = verifyRefreshToken(refreshToken);
   const { newAccessToken, newRefreshToken } =
     await authService.refreshAccessToken(decodedToken);
-  res.cookie("refreshToken", newRefreshToken, {
-    httpOnly: true,
-    secure: true,
-    sameSite: "none",
-    maxAge: 7 * 24 * 60 * 60 * 1000, //7 days
-  });
+  SetRefreshTokenCookie(res, newRefreshToken);
   res.status(200).json({
     message: "Token refreshed successfully",
     data: {

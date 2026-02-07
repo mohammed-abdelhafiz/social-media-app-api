@@ -18,17 +18,15 @@ const getPostById = async (req: Request, res: Response) => {
 };
 
 const createPost = async (req: Request, res: Response) => {
-  const parsedBody = createPostSchema.parse(req.body);
-  //@ts-ignore
-  const userId = req.user.id;
-  const newPost = await postsService.createPost({ ...parsedBody, userId });
+  const { content } = createPostSchema.parse(req.body);
+  const userId = req.JwtPayload.userId;
+  const newPost = await postsService.createPost({ content, userId });
   res.status(201).json({ message: "Post created successfully", data: newPost });
 };
 
 const updatePost = async (req: Request, res: Response) => {
   const postId = req.params.id as string;
-  //@ts-ignore
-  const user = req.user;
+  const userId = req.JwtPayload.userId;
 
   const post = await postsService.getPostById(postId);
 
@@ -36,7 +34,7 @@ const updatePost = async (req: Request, res: Response) => {
     throw new AppError("Post not found", 404);
   }
 
-  if (post.userId.toString() !== user.id) {
+  if (post.userId.toString() !== userId) {
     throw new AppError("Unauthorized to update this post", 403);
   }
 
@@ -51,14 +49,13 @@ const updatePost = async (req: Request, res: Response) => {
 
 const deletePost = async (req: Request, res: Response) => {
   const postId = req.params.id as string;
-  //@ts-ignore
-  const user = req.user;
+  const userId = req.JwtPayload.userId;
   const post = await postsService.getPostById(postId);
 
   if (!post) {
     throw new AppError("Post not found", 404);
   }
-  if (post.userId.toString() !== user._id.toString()) {
+  if (post.userId.toString() !== userId) {
     throw new AppError("Unauthorized to delete this post", 403);
   }
   await postsService.deletePost(postId);
@@ -67,17 +64,10 @@ const deletePost = async (req: Request, res: Response) => {
 
 const likePost = async (req: Request, res: Response) => {
   const postId = req.params.id as string;
-  //@ts-ignore
-  const userId = req.user.id;
+  const userId = req.JwtPayload.userId;
 
   const message = await postsService.likePost(postId, userId);
   res.status(200).json({ message });
-};
-
-const sharePost = async (req: Request, res: Response) => {
-  const postId = req.params.id as string;
-  await postsService.sharePost(postId);
-  res.status(200).json({ message: "Post shared successfully" });
 };
 
 export default {
@@ -87,5 +77,4 @@ export default {
   getPostById,
   deletePost,
   likePost,
-  sharePost,
 };

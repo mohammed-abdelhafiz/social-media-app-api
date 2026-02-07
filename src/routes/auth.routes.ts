@@ -4,7 +4,9 @@ import authenticate from "../middlewares/authenticate";
 
 const router = Router();
 
-//* auth routes
+// =======================
+// AUTH ROUTES
+// =======================
 
 /**
  * @route POST /api/auth/register

@@ -36,7 +36,7 @@ const likePost = async (postId: string, userId: mongoose.Types.ObjectId) => {
   let message;
   if (post.likes.includes(userId)) {
     post.likes = post.likes.filter((id) => id.toString() !== userId.toString());
-    message = "Post unliked successfully";  
+    message = "Post unliked successfully";
   } else {
     post.likes.push(userId);
     message = "Post liked successfully";
@@ -47,18 +47,6 @@ const likePost = async (postId: string, userId: mongoose.Types.ObjectId) => {
   return message;
 };
 
-const sharePost = async (postId: string) => {
-  const post = await Post.findById(postId);
-  if (!post) {
-    throw new AppError("Post not found", 404);
-  }
-  post.shares += 1;
-
-  await post.save();
-
-  return post;
-};
-
 export default {
   getAllPosts,
   createPost,
@@ -66,5 +54,4 @@ export default {
   updatePost,
   deletePost,
   likePost,
-  sharePost,
 };

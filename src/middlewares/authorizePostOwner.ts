@@ -14,7 +14,7 @@ const authorizePostOwner = async (
     throw new AppError("Post not found", 404);
   }
   if (post.userId.toString() !== userId) {
-    throw new AppError("Unauthorized to update this post", 403);
+    throw new AppError("Unauthorized to update or delete this post", 403);
   }
   next();
 };

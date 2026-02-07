@@ -14,7 +14,7 @@ const authorizeCommentOwner = async (
     throw new AppError("Comment not found", 404);
   }
   if (comment.userId.toString() !== userId) {
-    throw new AppError("Unauthorized to update this comment", 403);
+    throw new AppError("Unauthorized to update or delete this comment", 403);
   }
   next();
 };

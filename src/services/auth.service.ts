@@ -4,6 +4,8 @@ import { LoginBody, RegisterBody } from "../schemas/auth.schema";
 import AppError from "../utils/AppError";
 import { generateAccessToken, generateRefreshToken } from "../utils/token";
 import { JwtPayload } from "../types/utilTypes";
+import { sendResetPasswordEmail } from "../utils/sendEmail";
+import crypto from "crypto";
 
 const register = async (body: RegisterBody) => {
   const user = await User.create(body);
@@ -12,11 +14,11 @@ const register = async (body: RegisterBody) => {
   await user.save();
 
   const accessToken = generateAccessToken({
-    userId: user._id.toString(),
+    userId: user._id,
     tokenVersion,
   });
   const refreshToken = generateRefreshToken({
-    userId: user._id.toString(),
+    userId: user._id,
     tokenVersion,
   });
 
@@ -37,11 +39,11 @@ const login = async (body: LoginBody) => {
     throw new AppError("Invalid email or password", 401);
   }
   const accessToken = generateAccessToken({
-    userId: user._id.toString(),
+    userId: user._id,
     tokenVersion: user.tokenVersion,
   });
   const refreshToken = generateRefreshToken({
-    userId: user._id.toString(),
+    userId: user._id,
     tokenVersion: user.tokenVersion,
   });
   return {
@@ -66,11 +68,11 @@ const refreshAccessToken = async (decodedToken: JwtPayload) => {
     throw new AppError("Invalid refresh token", 401);
   }
   const newAccessToken = generateAccessToken({
-    userId: user._id.toString(),
+    userId: user._id,
     tokenVersion: user.tokenVersion,
   });
   const newRefreshToken = generateRefreshToken({
-    userId: user._id.toString(),
+    userId: user._id,
     tokenVersion: user.tokenVersion,
   });
   return {
@@ -79,9 +81,44 @@ const refreshAccessToken = async (decodedToken: JwtPayload) => {
   };
 };
 
+const requestResetPassword = async (email: string) => {
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw new AppError("User not found", 404);
+  }
+  const resetPasswordToken = user.createPasswordResetToken();
+  await user.save();
+  await sendResetPasswordEmail(user.email, resetPasswordToken);
+  return {
+    message: "Password reset email sent successfully",
+  };
+};
+
+const resetPassword = async (token: string, newPassword: string) => {
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+  const user = await User.findOne({
+    resetPasswordToken: hashedToken,
+    resetPasswordExpire: { $gt: Date.now() },
+  });
+  if (!user) {
+    throw new AppError("Invalid or expired token", 400);
+  }
+
+  user.password = newPassword;
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpire = undefined;
+  await user.save();
+  return {
+    message: "Password updated successfully",
+  };
+};
+
 export default {
   register,
   login,
   logout,
   refreshAccessToken,
+  requestResetPassword,
+  resetPassword,
 };

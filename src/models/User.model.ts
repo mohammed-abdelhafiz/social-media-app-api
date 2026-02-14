@@ -1,7 +1,28 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import mongoose from "mongoose";
+import type { HydratedDocument, Model } from "mongoose";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
-const userSchema = new mongoose.Schema(
+interface IUser {
+  name: string;
+  username: string;
+  email: string;
+  password: string;
+  tokenVersion: number;
+  resetPasswordToken?: string;
+  resetPasswordExpire?: Date;
+}
+
+interface IUserMethods {
+  createPasswordResetToken(): string;
+}
+
+export type UserDocument = HydratedDocument<IUser, IUserMethods>;
+
+export type UserModel = Model<IUser, {}, IUserMethods>;
+
+const userSchema = new mongoose.Schema<IUser, UserModel, IUserMethods>(
   {
     name: {
       type: String,
@@ -36,26 +57,48 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
   },
   {
     timestamps: true,
   }
 );
 
-userSchema.pre("save", async function () {
+userSchema.pre("save", async function (this: UserDocument) {
   if (!this.isModified("password")) return;
+
   this.password = await bcrypt.hash(this.password, 12);
 });
 
-userSchema.methods.toJSON = function () {
+userSchema.methods.toJSON = function (this: UserDocument) {
   const user = this.toObject();
-  delete user.password;
-  delete user.refreshToken;
-  delete user.tokenVersion;
-  delete user.__v;
-  return user;
+
+  const {
+    password,
+    tokenVersion,
+    resetPasswordToken,
+    resetPasswordExpire,
+    __v,
+    ...safeUser
+  } = user;
+
+  return safeUser;
 };
 
+userSchema.methods.createPasswordResetToken = function (this: UserDocument) {
+  const resetToken = crypto.randomBytes(32).toString("hex");
 
-const User = mongoose.model("User", userSchema);
+  this.resetPasswordToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+
+  this.resetPasswordExpire = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+  return resetToken;
+};
+
+const User = mongoose.model<IUser, UserModel>("User", userSchema);
+
 export default User;

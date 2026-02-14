@@ -44,9 +44,9 @@ router.post("/logout", authenticate, authController.logout);
 router.post("/request-reset-password", authController.requestResetPassword);
 
 /**
- * @route GET /api/auth/reset-password/:token
- * @desc Reset password
- * @access Public
+ * `@route` POST /api/auth/reset-password/:token
+ * `@desc` Reset password
+ * `@access` Public
  */
 router.post("/reset-password/:token", authController.resetPassword);
 

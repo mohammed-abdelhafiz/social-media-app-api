@@ -107,6 +107,7 @@ const resetPassword = async (token: string, newPassword: string) => {
   }
 
   user.password = newPassword;
+  user.tokenVersion += 1;
   user.resetPasswordToken = undefined;
   user.resetPasswordExpire = undefined;
   await user.save();

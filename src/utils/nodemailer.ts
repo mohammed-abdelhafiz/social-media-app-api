@@ -12,6 +12,8 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+transporter.options.from = emailUser;
+
 export async function sendResetPasswordEmail(to: string, resetToken: string) {
   const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
   await transporter.sendMail({
@@ -23,5 +25,4 @@ export async function sendResetPasswordEmail(to: string, resetToken: string) {
       <p>This link expires in 15 minutes</p>
     `,
   });
-  console.log("Email sent successfully" + to + resetToken);
 }

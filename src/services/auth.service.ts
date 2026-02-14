@@ -4,7 +4,7 @@ import { LoginBody, RegisterBody } from "../schemas/auth.schema";
 import AppError from "../utils/AppError";
 import { generateAccessToken, generateRefreshToken } from "../utils/token";
 import { JwtPayload } from "../types/utilTypes";
-import { sendResetPasswordEmail } from "../utils/sendEmail";
+import { sendResetPasswordEmail } from "../utils/nodemailer";
 import crypto from "crypto";
 
 const register = async (body: RegisterBody) => {
@@ -14,11 +14,11 @@ const register = async (body: RegisterBody) => {
   await user.save();
 
   const accessToken = generateAccessToken({
-    userId: user._id,
+    userId: user._id.toString(),
     tokenVersion,
   });
   const refreshToken = generateRefreshToken({
-    userId: user._id,
+    userId: user._id.toString(),
     tokenVersion,
   });
 
@@ -39,11 +39,11 @@ const login = async (body: LoginBody) => {
     throw new AppError("Invalid email or password", 401);
   }
   const accessToken = generateAccessToken({
-    userId: user._id,
+    userId: user._id.toString(),
     tokenVersion: user.tokenVersion,
   });
   const refreshToken = generateRefreshToken({
-    userId: user._id,
+    userId: user._id.toString(),
     tokenVersion: user.tokenVersion,
   });
   return {
@@ -68,11 +68,11 @@ const refreshAccessToken = async (decodedToken: JwtPayload) => {
     throw new AppError("Invalid refresh token", 401);
   }
   const newAccessToken = generateAccessToken({
-    userId: user._id,
+    userId: user._id.toString(),
     tokenVersion: user.tokenVersion,
   });
   const newRefreshToken = generateRefreshToken({
-    userId: user._id,
+    userId: user._id.toString(),
     tokenVersion: user.tokenVersion,
   });
   return {

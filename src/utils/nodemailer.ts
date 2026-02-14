@@ -4,6 +4,10 @@ const clientUrl = process.env.CLIENT_URL;
 const emailUser = process.env.EMAIL_USER;
 const emailPass = process.env.EMAIL_PASS;
 
+if (!clientUrl || !emailUser || !emailPass) {
+  throw new Error("Missing email configuration (CLIENT_URL/EMAIL_USER/EMAIL_PASS)");
+}
+
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {

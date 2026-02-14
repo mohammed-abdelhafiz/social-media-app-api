@@ -83,14 +83,15 @@ const refreshAccessToken = async (decodedToken: JwtPayload) => {
 
 const requestResetPassword = async (email: string) => {
   const user = await User.findOne({ email });
+  const message = "If an account exists, a reset email has been sent";
   if (!user) {
-    throw new AppError("User not found", 404);
+    return { message };
   }
   const resetPasswordToken = user.createPasswordResetToken();
   await user.save();
   await sendResetPasswordEmail(user.email, resetPasswordToken);
   return {
-    message: "Password reset email sent successfully",
+    message,
   };
 };
 
@@ -106,6 +107,7 @@ const resetPassword = async (token: string, newPassword: string) => {
   }
 
   user.password = newPassword;
+  user.tokenVersion += 1;
   user.resetPasswordToken = undefined;
   user.resetPasswordExpire = undefined;
   await user.save();

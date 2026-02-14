@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { loginSchema, registerSchema } from "../schemas/auth.schema";
+import { loginSchema, registerSchema, requestResetPasswordSchema, resetPasswordSchema } from "../schemas/auth.schema";
 import authService from "../services/auth.service";
 import AppError from "../utils/AppError";
 import { SetRefreshTokenCookie, verifyRefreshToken } from "../utils/token";
@@ -56,9 +56,28 @@ const refreshAccessToken = async (req: Request, res: Response) => {
   });
 };
 
+const requestResetPassword = async (req: Request, res: Response) => {
+  const parsedBody = requestResetPasswordSchema.parse(req.body);
+  const { message } = await authService.requestResetPassword(parsedBody.email);
+  res.status(200).json({
+    message,
+  });
+};
+
+const resetPassword = async (req: Request, res: Response) => {
+  const token = req.params.token as string;
+  const parsedBody = resetPasswordSchema.parse(req.body);
+  const { message } = await authService.resetPassword(token, parsedBody.newPassword);
+  res.status(200).json({
+    message,
+  });
+};
+
 export default {
   register,
   login,
   logout,
   refreshAccessToken,
+  requestResetPassword,
+  resetPassword,
 };

@@ -4,18 +4,11 @@ import cookieParser from "cookie-parser";
 import authRoutes from "./routes/auth.routes";
 import postsRoutes from "./routes/posts.routes";
 import notFoundHandler from "./middlewares/notFoundHandler";
-import cors from "cors";
 
 // Initialize app
 const app = express();
 
 // Middlewares
-app.use(
-  cors({
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
-    credentials: true,
-  })
-);
 app.use(express.json());
 app.use(cookieParser());
 

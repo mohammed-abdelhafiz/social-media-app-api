@@ -8,7 +8,8 @@ import {
 } from "../schemas/posts.schema";
 import AppError from "../utils/AppError";
 
-const getAllPosts = async (_req: Request, res: Response) => {
+const getAllPosts = async (req: Request, res: Response) => {
+  console.log(req.cookies);
   const posts = await postsService.getAllPosts();
   res.status(200).json(posts);
 };
@@ -32,7 +33,7 @@ const createPost = async (req: Request, res: Response) => {
 
   res.status(201).json({
     message: "Post created successfully",
-    data: newPost,
+    newPost,
   });
 };
 
@@ -44,7 +45,7 @@ const updatePost = async (req: Request, res: Response) => {
 
   res.status(200).json({
     message: "Post updated successfully",
-    data: updatedPost,
+    updatedPost,
   });
 };
 
@@ -74,15 +75,11 @@ const createComment = async (req: Request, res: Response) => {
   const userId = req.JwtPayload.userId;
   const parsedBody = createCommentSchema.parse(req.body);
 
-  const comment = await postsService.createComment(
-    postId,
-    parsedBody,
-    userId
-  );
+  const comment = await postsService.createComment(postId, parsedBody, userId);
 
   res.status(201).json({
     message: "Comment added successfully",
-    data: comment,
+    comment,
   });
 };
 
@@ -93,7 +90,7 @@ const getPostComments = async (req: Request, res: Response) => {
 
   res.status(200).json({
     message: "Comments fetched successfully",
-    data: comments,
+    comments,
   });
 };
 
@@ -110,7 +107,7 @@ const updateComment = async (req: Request, res: Response) => {
 
   res.status(200).json({
     message: "Comment updated successfully",
-    data: comment,
+    comment,
   });
 };
 
@@ -122,7 +119,7 @@ const deleteComment = async (req: Request, res: Response) => {
 
   res.status(200).json({
     message: "Comment deleted successfully",
-    data: comment,
+    comment,
   });
 };
 

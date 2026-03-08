@@ -37,6 +37,13 @@ router.post("/refresh-access-token", authController.refreshAccessToken);
 router.post("/logout", authenticate, authController.logout);
 
 /**
+ * @route GET /api/auth/me
+ * @desc Get current user
+ * @access Private (requires authentication)
+ */
+router.get("/me", authenticate, authController.getMe);
+
+/**
  * @route POST /api/auth/request-reset-password
  * @desc Request reset password
  * @access Public

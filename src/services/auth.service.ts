@@ -116,6 +116,14 @@ const resetPassword = async (token: string, newPassword: string) => {
   };
 };
 
+const getMe = async (userId: string) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new AppError("User not found", 404);
+  }
+  return user;
+};
+
 export default {
   register,
   login,
@@ -123,4 +131,5 @@ export default {
   refreshAccessToken,
   requestResetPassword,
   resetPassword,
+  getMe,
 };

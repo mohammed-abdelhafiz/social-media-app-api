@@ -1,20 +1,18 @@
 import { NextFunction, Request, Response } from "express";
-import { extractToken, verifyAccessToken } from "../utils/token";
+import { verifyAccessToken } from "../utils/token";
 import AppError from "../utils/AppError";
-import User from "../models/User.model";
 
 const authenticate = async (
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ) => {
-  const token = extractToken(req);
-  const decoded = verifyAccessToken(token);
-  const user = await User.findById(decoded.userId);
-  if (!user || decoded.tokenVersion !== user.tokenVersion) {
-    throw new AppError("Invalid access token", 401);
+  const token = req.cookies.accessToken;
+  const jwtPayload = verifyAccessToken(token);
+  if (!jwtPayload) {
+    throw new AppError("Invalid or expired token", 401);
   }
-  req.JwtPayload = decoded;
+  req.JwtPayload = jwtPayload;
   next();
 };
 

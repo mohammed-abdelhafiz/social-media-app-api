@@ -1,28 +1,23 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import mongoose from "mongoose";
-import type { HydratedDocument, Model } from "mongoose";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 
-interface IUser {
+interface UserDocument extends mongoose.Document {
   name: string;
   username: string;
   email: string;
   password: string;
-  tokenVersion: number;
   resetPasswordToken?: string;
   resetPasswordExpire?: Date;
-}
-
-interface IUserMethods {
+  bio?: string;
+  avatar?: string;
+  followers: mongoose.Types.ObjectId[];
+  following: mongoose.Types.ObjectId[];
   createPasswordResetToken(): string;
 }
 
-export type UserDocument = HydratedDocument<IUser, IUserMethods>;
-
-export type UserModel = Model<IUser, {}, IUserMethods>;
-
-const userSchema = new mongoose.Schema<IUser, UserModel, IUserMethods>(
+const userSchema = new mongoose.Schema(
   {
     name: {
       type: String,
@@ -53,30 +48,39 @@ const userSchema = new mongoose.Schema<IUser, UserModel, IUserMethods>(
       trim: true,
       minLength: 6,
     },
-    tokenVersion: {
-      type: Number,
-      default: 0,
-    },
     resetPasswordToken: String,
     resetPasswordExpire: Date,
+    bio: {
+      type: String,
+      trim: true,
+      maxLength: 160,
+      default: "",
+    },
+    avatar: {
+      type: String,
+      trim: true,
+      default:
+        "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
+    },
+    followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    following: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   },
   {
     timestamps: true,
   }
 );
 
-userSchema.pre("save", async function (this: UserDocument) {
+userSchema.pre("save", async function (this) {
   if (!this.isModified("password")) return;
 
   this.password = await bcrypt.hash(this.password, 12);
 });
 
-userSchema.methods.toJSON = function (this: UserDocument) {
+userSchema.methods.toJSON = function (this) {
   const user = this.toObject();
 
   const {
     password,
-    tokenVersion,
     resetPasswordToken,
     resetPasswordExpire,
     __v,
@@ -86,7 +90,7 @@ userSchema.methods.toJSON = function (this: UserDocument) {
   return safeUser;
 };
 
-userSchema.methods.createPasswordResetToken = function (this: UserDocument) {
+userSchema.methods.createPasswordResetToken = function (this) {
   const resetToken = crypto.randomBytes(32).toString("hex");
 
   this.resetPasswordToken = crypto
@@ -99,6 +103,6 @@ userSchema.methods.createPasswordResetToken = function (this: UserDocument) {
   return resetToken;
 };
 
-const User = mongoose.model<IUser, UserModel>("User", userSchema);
+const User = mongoose.model<UserDocument>("User", userSchema);
 
 export default User;

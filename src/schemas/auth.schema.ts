@@ -22,6 +22,11 @@ export const registerSchema = z.object({
       /[!@#$:%^&*]/,
       "Password must contain at least one special character"
     ),
+  bio: z
+    .string()
+    .trim()
+    .max(160, "Bio must be at most 160 characters")
+    .optional(),
 });
 
 export type RegisterBody = z.infer<typeof registerSchema>;
@@ -42,7 +47,10 @@ export type RequestResetPasswordBody = z.infer<
 >;
 
 export const resetPasswordSchema = z.object({
-  newPassword: z.string().trim().min(6, "New password must be at least 6 characters"),
+  newPassword: z
+    .string()
+    .trim()
+    .min(6, "New password must be at least 6 characters"),
 });
 
 export type ResetPasswordBody = z.infer<typeof resetPasswordSchema>;

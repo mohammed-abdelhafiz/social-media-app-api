@@ -8,12 +8,12 @@ const authorizeCommentOwner = async (
   next: NextFunction
 ) => {
   const commentId = req.params.commentId as string;
-  const userId = req.JwtPayload.userId;
+  const userId = req.JwtPayload?.userId;
   const comment = await Comment.findById(commentId);
   if (!comment) {
     throw new AppError("Comment not found", 404);
   }
-  if (comment.userId.toString() !== userId) {
+  if (comment.author !== userId) {
     throw new AppError("Unauthorized to update or delete this comment", 403);
   }
   next();

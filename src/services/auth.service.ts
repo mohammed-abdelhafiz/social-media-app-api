@@ -6,20 +6,16 @@ import { generateAccessToken, generateRefreshToken } from "../utils/token";
 import { JwtPayload } from "../types/utilTypes";
 import { sendResetPasswordEmail } from "../utils/nodemailer";
 import crypto from "crypto";
+import mongoose from "mongoose";
 
 const register = async (body: RegisterBody) => {
   const user = await User.create(body);
-  const tokenVersion = 0; // Initial token version
-  user.tokenVersion = tokenVersion;
-  await user.save();
 
   const accessToken = generateAccessToken({
-    userId: user._id.toString(),
-    tokenVersion,
+    userId: user._id,
   });
   const refreshToken = generateRefreshToken({
-    userId: user._id.toString(),
-    tokenVersion,
+    userId: user._id,
   });
 
   return {
@@ -39,12 +35,10 @@ const login = async (body: LoginBody) => {
     throw new AppError("Invalid email or password", 401);
   }
   const accessToken = generateAccessToken({
-    userId: user._id.toString(),
-    tokenVersion: user.tokenVersion,
+    userId: user._id,
   });
   const refreshToken = generateRefreshToken({
-    userId: user._id.toString(),
-    tokenVersion: user.tokenVersion,
+    userId: user._id,
   });
   return {
     user,
@@ -53,27 +47,19 @@ const login = async (body: LoginBody) => {
   };
 };
 
-const logout = async (userId: string) => {
-  const user = await User.findById(userId);
+const refreshAccessToken = async (decodedToken: JwtPayload | null) => {
+  if (!decodedToken) {
+    throw new AppError("Invalid refresh token", 401);
+  }
+  const user = await User.findById(decodedToken.userId);
   if (!user) {
     throw new AppError("User not found", 404);
   }
-  user.tokenVersion += 1; // Invalidate existing access tokens
-  await user.save();
-};
-
-const refreshAccessToken = async (decodedToken: JwtPayload) => {
-  const user = await User.findById(decodedToken.userId);
-  if (!user || user.tokenVersion !== decodedToken.tokenVersion) {
-    throw new AppError("Invalid refresh token", 401);
-  }
   const newAccessToken = generateAccessToken({
-    userId: user._id.toString(),
-    tokenVersion: user.tokenVersion,
+    userId: user._id,
   });
   const newRefreshToken = generateRefreshToken({
-    userId: user._id.toString(),
-    tokenVersion: user.tokenVersion,
+    userId: user._id,
   });
   return {
     newAccessToken,
@@ -83,21 +69,16 @@ const refreshAccessToken = async (decodedToken: JwtPayload) => {
 
 const requestResetPassword = async (email: string) => {
   const user = await User.findOne({ email });
-  const message = "If an account exists, a reset email has been sent";
   if (!user) {
-    return { message };
+    return;
   }
   const resetPasswordToken = user.createPasswordResetToken();
   await user.save();
   await sendResetPasswordEmail(user.email, resetPasswordToken);
-  return {
-    message,
-  };
 };
 
 const resetPassword = async (token: string, newPassword: string) => {
   const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
-
   const user = await User.findOne({
     resetPasswordToken: hashedToken,
     resetPasswordExpire: { $gt: Date.now() },
@@ -107,16 +88,12 @@ const resetPassword = async (token: string, newPassword: string) => {
   }
 
   user.password = newPassword;
-  user.tokenVersion += 1;
   user.resetPasswordToken = undefined;
   user.resetPasswordExpire = undefined;
   await user.save();
-  return {
-    message: "Password updated successfully",
-  };
 };
 
-const getMe = async (userId: string) => {
+const getMe = async (userId: mongoose.Types.ObjectId) => {
   const user = await User.findById(userId);
   if (!user) {
     throw new AppError("User not found", 404);
@@ -127,7 +104,6 @@ const getMe = async (userId: string) => {
 export default {
   register,
   login,
-  logout,
   refreshAccessToken,
   requestResetPassword,
   resetPassword,

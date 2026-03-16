@@ -116,7 +116,7 @@ const likePost = async (req: Request, res: Response) => {
 const createComment = async (req: Request, res: Response) => {
   const parsedBody = createCommentSchema.parse(req.body);
   const author = req.JwtPayload?.userId as mongoose.Types.ObjectId;
-  const postId = req.params.id as string;
+  const postId = req.params.postId as string;
   const comment = await postService.createComment(
     postId,
     parsedBody.content,
@@ -131,7 +131,7 @@ const createComment = async (req: Request, res: Response) => {
  * @access Public
  */
 const getPostComments = async (req: Request, res: Response) => {
-  const postId = req.params.id as string;
+  const postId = req.params.postId as string;
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 10;
   const comments = await postService.getPostComments(postId, page, limit);

@@ -25,12 +25,11 @@ const getPosts = async ({
     const loggedInUser = await User.findById(userId).lean();
 
     if (!loggedInUser) {
-      throw new Error("User not found");
+      throw new AppError("User not found", 404);
     }
 
     query.author = { $in: loggedInUser.following };
   }
-
   return Post.find(query)
     .sort({ createdAt: -1 })
     .populate("author", "username avatar name")
@@ -52,8 +51,6 @@ const createPost = async (data: {
   content: PostContent;
   author: mongoose.Types.ObjectId;
 }) => {
-    console.log(data)
-
   if (!data.content.image && !data.content.text.length)
     throw new AppError("Post must have text or image", 400);
   return Post.create(data);
@@ -72,10 +69,23 @@ const updatePost = async (
 
   post.content.text = data.content.text;
   if (data.content.image) {
-    await deleteImageFromCloudinary(post.content.image?.publicId);
+    const success = await deleteImageFromCloudinary(
+      post.content.image?.publicId
+    );
+    if (!success) {
+      throw new AppError("Failed to delete old image from Cloudinary", 500);
+    }
     post.content.image = data.content.image;
-  } else if (data.content.removeOldImage==="true") {
-    await deleteImageFromCloudinary(post.content.image?.publicId);
+  } else if (
+    data.content.removeOldImage === "true" ||
+    data.content.removeOldImage === true
+  ) {
+    const success = await deleteImageFromCloudinary(
+      post.content.image?.publicId
+    );
+    if (!success) {
+      throw new AppError("Failed to delete old image from Cloudinary", 500);
+    }
     post.content.image = null;
   }
   const updatedPost = await post.save();
@@ -89,7 +99,10 @@ const deletePost = async (postId: string) => {
   if (!post) throw new AppError("Post not found", 404);
 
   await Post.findByIdAndDelete(postId).session(session);
-  await deleteImageFromCloudinary(post.content.image?.publicId);
+  const success = await deleteImageFromCloudinary(post.content.image?.publicId);
+  if (!success) {
+    throw new AppError("Failed to delete image from Cloudinary", 500);
+  }
   await Comment.deleteMany({ postId }).session(session);
 
   await session.commitTransaction();
@@ -127,9 +140,10 @@ const getPostComments = async (postId: string, page: number, limit: number) => {
   const skip = (page - 1) * limit;
   return Comment.find({ postId })
     .sort({ createdAt: -1 })
-    .populate("author")
+    .populate("author", "username avatar name")
     .skip(skip)
-    .limit(limit);
+    .limit(limit)
+    .lean();
 };
 
 export default {

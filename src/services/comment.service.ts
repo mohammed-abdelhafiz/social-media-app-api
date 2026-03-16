@@ -15,9 +15,6 @@ const updateComment = async (commentId: string, data: UpdateCommentBody) => {
 
 const deleteComment = async (commentId: string) => {
   const comment = await Comment.findByIdAndDelete(commentId);
-  if (!comment) {
-    throw new AppError("Comment not found", 404);
-  }
   return comment;
 };
 

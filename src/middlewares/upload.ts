@@ -4,8 +4,8 @@ import cloudinary from "../utils/cloudinary";
 
 const storage = new CloudinaryStorage({
   cloudinary,
-  params: async (req, file) => ({
-    folder: `postinger/${file.fieldname}s`,
+  params: async (req) => ({
+    folder: "postinger-social-media-app",
     public_id: `${req.JwtPayload?.userId}-${Date.now()}`,
     allowed_formats: ["jpg", "png", "jpeg", "webp"],
     transformation: [{ quality: "auto" }, { fetch_format: "webp" }],

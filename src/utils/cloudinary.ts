@@ -8,12 +8,14 @@ cloudinary.config({
 
 export const deleteImageFromCloudinary = async (
   publicId: string | null | undefined
-) => {
+): Promise<boolean> => {
   try {
-    if (!publicId) return;
+    if (!publicId) return true;
     await cloudinary.uploader.destroy(publicId);
+    return true;
   } catch (error) {
-    console.error("Error deleting image from Cloudinary:", error);
+    console.error("Failed to delete image from Cloudinary", error);
+    return false;
   }
 };
 

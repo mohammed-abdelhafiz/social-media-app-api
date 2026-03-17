@@ -8,15 +8,16 @@ import { sendResetPasswordEmail } from "../utils/nodemailer";
 import crypto from "crypto";
 import mongoose from "mongoose";
 
+const generateTokens = (userId: mongoose.Types.ObjectId) => {
+  const accessToken = generateAccessToken({ userId });
+  const refreshToken = generateRefreshToken({ userId });
+  return { accessToken, refreshToken };
+};
+
 const register = async (body: RegisterBody) => {
   const user = await User.create(body);
 
-  const accessToken = generateAccessToken({
-    userId: user._id,
-  });
-  const refreshToken = generateRefreshToken({
-    userId: user._id,
-  });
+  const { accessToken, refreshToken } = generateTokens(user._id);
 
   return {
     user,
@@ -34,12 +35,7 @@ const login = async (body: LoginBody) => {
   if (!isPasswordValid) {
     throw new AppError("Invalid email or password", 401);
   }
-  const accessToken = generateAccessToken({
-    userId: user._id,
-  });
-  const refreshToken = generateRefreshToken({
-    userId: user._id,
-  });
+  const { accessToken, refreshToken } = generateTokens(user._id);
   return {
     user,
     accessToken,
@@ -55,12 +51,7 @@ const refreshAccessToken = async (decodedToken: JwtPayload | null) => {
   if (!user) {
     throw new AppError("User not found", 404);
   }
-  const newAccessToken = generateAccessToken({
-    userId: user._id,
-  });
-  const newRefreshToken = generateRefreshToken({
-    userId: user._id,
-  });
+  const { accessToken: newAccessToken, refreshToken: newRefreshToken } = generateTokens(user._id);
   return {
     newAccessToken,
     newRefreshToken,

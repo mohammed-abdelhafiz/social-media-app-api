@@ -8,10 +8,16 @@ import {
 import authService from "../services/auth.service";
 import {
   setAccessTokenCookie,
-  SetRefreshTokenCookie,
+  setRefreshTokenCookie,
   verifyRefreshToken,
 } from "../utils/token";
 import mongoose from "mongoose";
+
+const setAuthCookies = (res: Response, accessToken: string, refreshToken: string) => {
+  res.clearCookie("refreshToken");
+  setRefreshTokenCookie(res, refreshToken);
+  setAccessTokenCookie(res, accessToken);
+};
 
 /**
  * @route GET /api/auth/me
@@ -32,9 +38,7 @@ const getMe = async (req: Request, res: Response) => {
 const register = async (req: Request, res: Response) => {
   const parsedBody = registerSchema.parse(req.body);
   const result = await authService.register(parsedBody);
-  res.clearCookie("refreshToken");
-  SetRefreshTokenCookie(res, result.refreshToken);
-  setAccessTokenCookie(res, result.accessToken);
+  setAuthCookies(res, result.accessToken, result.refreshToken);
   res.status(201).json({
     message: "Account created successfully",
     user: result.user,
@@ -49,9 +53,7 @@ const register = async (req: Request, res: Response) => {
 const login = async (req: Request, res: Response) => {
   const parsedBody = loginSchema.parse(req.body);
   const result = await authService.login(parsedBody);
-  res.clearCookie("refreshToken");
-  SetRefreshTokenCookie(res, result.refreshToken);
-  setAccessTokenCookie(res, result.accessToken);
+  setAuthCookies(res, result.accessToken, result.refreshToken);
   res.status(200).json({
     message: "Logged in successfully",
     user: result.user,
@@ -81,9 +83,7 @@ const refreshAccessToken = async (req: Request, res: Response) => {
   const decodedToken = verifyRefreshToken(refreshToken);
   const { newAccessToken, newRefreshToken } =
     await authService.refreshAccessToken(decodedToken);
-  res.clearCookie("refreshToken");
-  SetRefreshTokenCookie(res, newRefreshToken);
-  setAccessTokenCookie(res, newAccessToken);
+  setAuthCookies(res, newAccessToken, newRefreshToken);
   res.status(200).json({
     message: "Access token refreshed successfully",
   });

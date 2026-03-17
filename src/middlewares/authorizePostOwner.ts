@@ -1,7 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import AppError from "../utils/AppError";
 import Post from "../models/Post.model";
-import mongoose from "mongoose";
 
 const authorizePostOwner = async (
   req: Request,

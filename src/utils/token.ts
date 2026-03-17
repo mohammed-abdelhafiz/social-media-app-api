@@ -39,7 +39,7 @@ export const setAccessTokenCookie = (res: Response, accessToken: string) => {
   });
 };
 
-export const SetRefreshTokenCookie = (res: Response, refreshToken: string) => {
+export const setRefreshTokenCookie = (res: Response, refreshToken: string) => {
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
     secure: true,

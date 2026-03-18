@@ -15,7 +15,7 @@ const CommentSchema = new mongoose.Schema(
     content: { type: String, required: true },
     likedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     likesCount: { type: Number, default: 0 },
-    likedByCurrentUser: { type: Boolean, default: false },
+    likedByAuthenticatedUser: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

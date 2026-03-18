@@ -27,7 +27,7 @@ const likeComment = async (
     {
       $pull: { likes: userId },
       $inc: { likesCount: -1 },
-      likedByCurrentUser: false,
+      likedByAuthenticatedUser: false,
     }
   );
   if (result.modifiedCount === 0) {
@@ -36,7 +36,7 @@ const likeComment = async (
       {
         $addToSet: { likes: userId },
         $inc: { likesCount: 1 },
-        likedByCurrentUser: true,
+        likedByAuthenticatedUser: true,
       }
     );
     return "Comment liked successfully";

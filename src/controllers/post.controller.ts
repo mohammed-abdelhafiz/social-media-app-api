@@ -102,7 +102,6 @@ const deletePost = async (req: Request, res: Response) => {
  * @access Private (Requires authentication)
  */
 const likePost = async (req: Request, res: Response) => {
-  console.log(req);
   const userId = req.JwtPayload?.userId as mongoose.Types.ObjectId;
   const postId = req.params.postId as string;
   const message = await postService.likePost(postId, userId);

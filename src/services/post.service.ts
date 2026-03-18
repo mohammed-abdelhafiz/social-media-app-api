@@ -111,7 +111,12 @@ const deletePost = async (postId: string) => {
 
     await Post.findByIdAndDelete(postId).session(session);
 
-    if (post.content.image?.publicId) {
+
+
+    await Comment.deleteMany({ postId }).session(session);
+
+    await session.commitTransaction();
+        if (post.content.image?.publicId) {
       const success = await deleteImageFromCloudinary(
         post.content.image.publicId
       );
@@ -119,10 +124,6 @@ const deletePost = async (postId: string) => {
         throw new AppError("Failed to delete image from Cloudinary", 500);
       }
     }
-
-    await Comment.deleteMany({ postId }).session(session);
-
-    await session.commitTransaction();
   } catch (err) {
     await session.abortTransaction();
     throw err;
@@ -137,7 +138,7 @@ const likePost = async (postId: string, userId: mongoose.Types.ObjectId) => {
     {
       $pull: { likedBy: userId },
       $inc: { likesCount: -1 },
-      likedByCurrentUser: false,
+      likedByAuthenticatedUser: false,
     }
   );
 
@@ -147,7 +148,7 @@ const likePost = async (postId: string, userId: mongoose.Types.ObjectId) => {
       {
         $addToSet: { likedBy: userId },
         $inc: { likesCount: 1 },
-        likedByCurrentUser: true,
+        likedByAuthenticatedUser: true,
       }
     );
     return "Post liked successfully";
@@ -163,8 +164,9 @@ const createComment = async (
 ) => {
   const post = await Post.findById(postId);
   if (!post) throw new AppError("Post not found", 404);
+  const comment = await Comment.create({ postId, content, author });
   await Post.updateOne({ _id: postId }, { $inc: { commentsCount: 1 } });
-  return Comment.create({ postId, content, author });
+  return comment;
 };
 
 const getPostComments = async (postId: string, page: number, limit: number) => {

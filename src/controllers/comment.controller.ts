@@ -60,8 +60,11 @@ const likeComment = async (req: Request, res: Response) => {
  */
 const getCommentLikes = async (req: Request, res: Response) => {
   const commentId = req.params.commentId as string;
-  const page = parseInt(req.query.page as string) || 1;
-  const limit = parseInt(req.query.limit as string) || 10;
+  const page = Math.max(1, parseInt(req.query.page as string) || 1);
+  const limit = Math.min(
+    100,
+    Math.max(1, parseInt(req.query.limit as string) || 10)
+  );
   const likes = await commentsService.getCommentLikes(commentId, page, limit);
   res.status(200).json(likes);
 };

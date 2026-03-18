@@ -8,7 +8,7 @@ export interface PostDocument extends mongoose.Document {
   likedBy: mongoose.Types.ObjectId[];
   commentsCount: number;
   likesCount: number;
-  likedByCurrentUser: boolean;
+  likedByAuthenticatedUser: boolean;
 }
 
 const PostSchema = new mongoose.Schema<PostDocument>(
@@ -33,7 +33,7 @@ const PostSchema = new mongoose.Schema<PostDocument>(
     likedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     commentsCount: { type: Number, default: 0 },
     likesCount: { type: Number, default: 0 },
-    likedByCurrentUser: { type: Boolean, default: false },
+    likedByAuthenticatedUser: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

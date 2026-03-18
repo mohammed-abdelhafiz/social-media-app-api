@@ -13,7 +13,7 @@ const authorizeProfileOwner = async (
   if (!user) {
     throw new AppError("User not found", 404);
   }
-  if (user._id !== loggedInUserId) {
+  if (user._id.toString() !== loggedInUserId?.toString()) {
     throw new AppError("Unauthorized to update or delete this profile", 403);
   }
   next();

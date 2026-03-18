@@ -23,5 +23,5 @@ router
   .route("/:postId/comments")
   .get(postsController.getPostComments)
   .post(authenticate, postsController.createComment);
-
+router.route("/:postId/likes").get(postsController.getPostLikes);
 export default router;

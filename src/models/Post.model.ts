@@ -5,7 +5,10 @@ export interface PostDocument extends mongoose.Document {
   author: mongoose.Types.ObjectId;
   content: PostContent;
   comments: mongoose.Types.ObjectId[];
-  likes: mongoose.Types.ObjectId[];
+  likedBy: mongoose.Types.ObjectId[];
+  commentsCount: number;
+  likesCount: number;
+  likedByCurrentUser: boolean;
 }
 
 const PostSchema = new mongoose.Schema<PostDocument>(
@@ -27,19 +30,13 @@ const PostSchema = new mongoose.Schema<PostDocument>(
       },
       required: true,
     },
-    comments: [{ type: mongoose.Schema.Types.ObjectId, ref: "Comment" }],
-    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    likedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    commentsCount: { type: Number, default: 0 },
+    likesCount: { type: Number, default: 0 },
+    likedByCurrentUser: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
-
-PostSchema.virtual("likeCount").get(function () {
-  return this.likes.length;
-});
-
-PostSchema.virtual("commentCount").get(function () {
-  return this.comments.length;
-});
 
 PostSchema.methods.toJSON = function () {
   const post = this.toObject({ virtuals: true });

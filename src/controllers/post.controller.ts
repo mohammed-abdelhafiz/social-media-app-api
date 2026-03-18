@@ -102,8 +102,9 @@ const deletePost = async (req: Request, res: Response) => {
  * @access Private (Requires authentication)
  */
 const likePost = async (req: Request, res: Response) => {
+  console.log(req);
   const userId = req.JwtPayload?.userId as mongoose.Types.ObjectId;
-  const postId = req.params.id as string;
+  const postId = req.params.postId as string;
   const message = await postService.likePost(postId, userId);
   res.status(200).json({ message });
 };
@@ -138,6 +139,19 @@ const getPostComments = async (req: Request, res: Response) => {
   res.status(200).json(comments);
 };
 
+/**
+ * @route GET /api/posts/:postId/likes
+ * @desc Get likes of a post (paginated)
+ * @access Public
+ */
+const getPostLikes = async (req: Request, res: Response) => {
+  const postId = req.params.postId as string;
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+  const likes = await postService.getPostLikes(postId, page, limit);
+  res.status(200).json(likes);
+};
+
 export default {
   getPosts,
   getPostById,
@@ -147,4 +161,5 @@ export default {
   likePost,
   createComment,
   getPostComments,
+  getPostLikes,
 };

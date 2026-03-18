@@ -15,7 +15,8 @@ router
   );
 
 router
-  .route("/:commentId/like")
+  .route("/:commentId/likes")
+  .get(commentsController.getCommentLikes)
   .post(authenticate, commentsController.likeComment);
 
 export default router;

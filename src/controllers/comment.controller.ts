@@ -53,8 +53,22 @@ const likeComment = async (req: Request, res: Response) => {
   });
 };
 
+/**
+ * @route GET /api/comments/:commentId/likes
+ * @desc Get likes of a comment (paginated)
+ * @access Public
+ */
+const getCommentLikes = async (req: Request, res: Response) => {
+  const commentId = req.params.commentId as string;
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+  const likes = await commentsService.getCommentLikes(commentId, page, limit);
+  res.status(200).json(likes);
+};
+
 export default {
   updateComment,
   deleteComment,
   likeComment,
+  getCommentLikes,
 };

@@ -11,24 +11,18 @@ import {
   setRefreshTokenCookie,
   verifyRefreshToken,
 } from "../utils/token";
-import mongoose from "mongoose";
 
-const setAuthCookies = (res: Response, accessToken: string, refreshToken: string) => {
+const setAuthCookies = (
+  res: Response,
+  accessToken: string,
+  refreshToken: string
+) => {
   res.clearCookie("refreshToken");
   setRefreshTokenCookie(res, refreshToken);
   setAccessTokenCookie(res, accessToken);
 };
 
-/**
- * @route GET /api/auth/me
- * @desc Get current user
- * @access Private (requires authentication)
- */
-const getMe = async (req: Request, res: Response) => {
-  const userId = req.JwtPayload?.userId as mongoose.Types.ObjectId;
-  const user = await authService.getMe(userId);
-  res.status(200).json(user);
-};
+
 
 /**
  * @route POST /api/auth/register
@@ -37,7 +31,14 @@ const getMe = async (req: Request, res: Response) => {
  */
 const register = async (req: Request, res: Response) => {
   const parsedBody = registerSchema.parse(req.body);
-  const result = await authService.register(parsedBody);
+  let avatar;
+  if (req.file) {
+    avatar = {
+      url: req.file.path,
+      publicId: req.file.filename,
+    };
+  }
+  const result = await authService.register({ body: parsedBody, avatar });
   setAuthCookies(res, result.accessToken, result.refreshToken);
   res.status(201).json({
     message: "Account created successfully",
@@ -123,5 +124,4 @@ export default {
   refreshAccessToken,
   requestResetPassword,
   resetPassword,
-  getMe,
 };

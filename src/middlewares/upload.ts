@@ -6,7 +6,7 @@ const storage = new CloudinaryStorage({
   cloudinary,
   params: async (req) => ({
     folder: "postinger-social-media-app",
-    public_id: `${req.JwtPayload?.userId}-${Date.now()}`,
+    public_id: `${req.JwtPayload?.userId || "anonymous"}-${Date.now()}`,
     allowed_formats: ["jpg", "png", "jpeg", "webp"],
     transformation: [{ quality: "auto" }, { fetch_format: "webp" }],
   }),

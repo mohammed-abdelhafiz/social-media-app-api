@@ -5,16 +5,27 @@ import authenticate from "../middlewares/authenticate";
 
 const router = Router();
 
-router.get("/", usersController.getAllUsers);
+router.get("/me", authenticate, usersController.getCurrentUser);
+
+router.get(
+  "/followSuggestions",
+  authenticate,
+  usersController.getFollowSuggestions
+);
 
 router
   .route("/:username")
-  .get(usersController.getUser)
+  .get(usersController.getUserProfile)
   .put(authenticate, authorizeProfileOwner, usersController.updateUserProfile)
   .delete(
     authenticate,
     authorizeProfileOwner,
     usersController.deleteUserAccount
   );
+
+router.get("/:username/followers", usersController.getUserFollowers);
+router.get("/:username/following", usersController.getUserFollowing);
+
+router.post("/:username/follow", authenticate, usersController.followUser);
 
 export default router;

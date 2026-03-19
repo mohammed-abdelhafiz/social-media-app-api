@@ -14,8 +14,14 @@ const generateTokens = (userId: mongoose.Types.ObjectId) => {
   return { accessToken, refreshToken };
 };
 
-const register = async (body: RegisterBody) => {
-  const user = await User.create(body);
+const register = async ({
+  body,
+  avatar,
+}: {
+  body: RegisterBody;
+  avatar?: { url: string; publicId: string };
+}) => {
+  const user = await User.create({ ...body, avatar });
 
   const { accessToken, refreshToken } = generateTokens(user._id);
 
@@ -51,7 +57,8 @@ const refreshAccessToken = async (decodedToken: JwtPayload | null) => {
   if (!user) {
     throw new AppError("User not found", 404);
   }
-  const { accessToken: newAccessToken, refreshToken: newRefreshToken } = generateTokens(user._id);
+  const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
+    generateTokens(user._id);
   return {
     newAccessToken,
     newRefreshToken,

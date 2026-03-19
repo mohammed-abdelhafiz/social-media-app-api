@@ -3,23 +3,47 @@ import usersService from "../services/user.service";
 import { updateUserProfileSchema } from "../schemas/users.schema";
 
 /**
- * @route GET /api/users
- * @desc Get all users
+ * @route GET /api/users/followSuggestions
+ * @desc Get follow suggestions
  * @access Public
  */
-const getAllUsers = async (req: Request, res: Response) => {
-  const users = await usersService.getAllUsers();
-  res.status(200).json(users);
+const getFollowSuggestions = async (req: Request, res: Response) => {
+  const currentUserId = req.JwtPayload?.userId;
+  if (!currentUserId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+  const suggestions = await usersService.getFollowSuggestions({
+    currentUserId,
+    page,
+    limit,
+  });
+  res.status(200).json(suggestions);
 };
 
 /**
- * @route GET /api/users/:id
- * @desc Get single user by ID or username
+ * @route GET /api/users/me
+ * @desc Get current authenticated user
+ * @access Private (Requires authentication)
+ */
+const getCurrentUser = async (req: Request, res: Response) => {
+  const currentUserId = req.JwtPayload?.userId;
+  if (!currentUserId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  const user = await usersService.getCurrentUser(currentUserId);
+  res.status(200).json(user);
+};
+
+/**
+ * @route GET /api/users/:username
+ * @desc Get single user by username
  * @access Public
  */
-const getUser = async (req: Request, res: Response) => {
-  const userIdOrUsername = req.params.id as string;
-  const user = await usersService.getUser(userIdOrUsername);
+const getUserProfile = async (req: Request, res: Response) => {
+  const username = req.params.username as string;
+  const user = await usersService.getUser(username);
   res.status(200).json(user);
 };
 
@@ -52,9 +76,49 @@ const deleteUserAccount = (req: Request, res: Response) => {
     message: `Delete user account (${username}) - Not implemented yet`,
   });
 };
+
+const followUser = async (req: Request, res: Response) => {
+  const username = req.params.username as string;
+  const currentUserId = req.JwtPayload?.userId;
+  if (!currentUserId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  const { message } = await usersService.followUser(currentUserId, username);
+  res.status(200).json({
+    message,
+  });
+};
+
+const getUserFollowers = async (req: Request, res: Response) => {
+  const username = req.params.username as string;
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+  const followers = await usersService.getUserFollowers({
+    username,
+    page,
+    limit,
+  });
+  res.status(200).json(followers);
+};
+const getUserFollowing = async (req: Request, res: Response) => {
+  const username = req.params.username as string;
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+  const following = await usersService.getUserFollowing({
+    username,
+    page,
+    limit,
+  });
+  res.status(200).json(following);
+};
+
 export default {
-  getAllUsers,
-  getUser,
+  getFollowSuggestions,
+  getCurrentUser,
+  getUserProfile,
   updateUserProfile,
   deleteUserAccount,
+  followUser,
+  getUserFollowers,
+  getUserFollowing,
 };

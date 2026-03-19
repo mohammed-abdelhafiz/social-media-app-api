@@ -11,7 +11,10 @@ interface UserDocument extends mongoose.Document {
   resetPasswordToken?: string;
   resetPasswordExpire?: Date;
   bio?: string;
-  avatar?: string;
+  avatar?: {
+    url: string;
+    publicId: string;
+  };
   followers: mongoose.Types.ObjectId[];
   following: mongoose.Types.ObjectId[];
   createPasswordResetToken(): string;
@@ -57,10 +60,14 @@ const userSchema = new mongoose.Schema(
       default: "",
     },
     avatar: {
-      type: String,
-      trim: true,
-      default:
-        "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
+      type: {
+        url: String,
+        publicId: String,
+      },
+      default: {
+        url: "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
+        publicId: "default-avatar",
+      },
     },
     followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     following: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],

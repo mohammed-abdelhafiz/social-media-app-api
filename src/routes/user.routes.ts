@@ -5,8 +5,6 @@ import authenticate from "../middlewares/authenticate";
 
 const router = Router();
 
-router.get("/me", authenticate, usersController.getCurrentUser);
-
 router.get(
   "/followSuggestions",
   authenticate,

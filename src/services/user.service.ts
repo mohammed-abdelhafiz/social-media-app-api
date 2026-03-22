@@ -25,13 +25,7 @@ const getFollowSuggestions = async ({
   return users;
 };
 
-const getCurrentUser = async (currentUserId: mongoose.Types.ObjectId) => {
-  const user = await User.findById(currentUserId);
-  if (!user) {
-    throw new AppError("User not found", 404);
-  }
-  return user;
-};
+
 
 const getUser = async (username: string) => {
   const user = await User.findOne({ username });
@@ -121,7 +115,6 @@ const getUserFollowing = async ({username, page, limit}: {username: string, page
 
 export default {
   getFollowSuggestions,
-  getCurrentUser,
   getUser,
   updateUserProfile,
   followUser,

@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import type { JwtPayload } from "../types/utilTypes";
 import { Response } from "express";
+import mongoose from "mongoose";
 
 export const generateAccessToken = (payload: JwtPayload) => {
   return jwt.sign(payload, process.env.JWT_ACCESS_SECRET!, {
@@ -46,4 +47,10 @@ export const setRefreshTokenCookie = (res: Response, refreshToken: string) => {
     sameSite: "strict",
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
   });
+};
+
+export const generateTokens = (userId: mongoose.Types.ObjectId) => {
+  const accessToken = generateAccessToken({ userId });
+  const refreshToken = generateRefreshToken({ userId });
+  return { accessToken, refreshToken };
 };

@@ -2,26 +2,14 @@ import bcrypt from "bcryptjs";
 import User from "../models/User.model";
 import { LoginBody, RegisterBody } from "../schemas/auth.schema";
 import AppError from "../utils/AppError";
-import { generateAccessToken, generateRefreshToken } from "../utils/token";
+import { generateTokens } from "../utils/token";
 import { JwtPayload } from "../types/utilTypes";
 import { sendResetPasswordEmail } from "../utils/nodemailer";
 import crypto from "crypto";
 import mongoose from "mongoose";
 
-const generateTokens = (userId: mongoose.Types.ObjectId) => {
-  const accessToken = generateAccessToken({ userId });
-  const refreshToken = generateRefreshToken({ userId });
-  return { accessToken, refreshToken };
-};
-
-const register = async ({
-  body,
-  avatar,
-}: {
-  body: RegisterBody;
-  avatar?: { url: string; publicId: string };
-}) => {
-  const user = await User.create({ ...body, avatar });
+const register = async (body: RegisterBody) => {
+  const user = await User.create(body);
 
   const { accessToken, refreshToken } = generateTokens(user._id);
 
@@ -91,12 +79,12 @@ const resetPassword = async (token: string, newPassword: string) => {
   await user.save();
 };
 
-const getMe = async (userId: mongoose.Types.ObjectId) => {
-  const user = await User.findById(userId);
-  if (!user) {
+const getMe = async (myId: mongoose.Types.ObjectId) => {
+  const me = await User.findById(myId);
+  if (!me) {
     throw new AppError("User not found", 404);
   }
-  return user;
+  return me;
 };
 
 export default {

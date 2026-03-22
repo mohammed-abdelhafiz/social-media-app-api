@@ -31,14 +31,7 @@ const setAuthCookies = (
  */
 const register = async (req: Request, res: Response) => {
   const parsedBody = registerSchema.parse(req.body);
-  let avatar;
-  if (req.file) {
-    avatar = {
-      url: req.file.path,
-      publicId: req.file.filename,
-    };
-  }
-  const result = await authService.register({ body: parsedBody, avatar });
+  const result = await authService.register(parsedBody);
   setAuthCookies(res, result.accessToken, result.refreshToken);
   res.status(201).json({
     message: "Account created successfully",
@@ -117,6 +110,20 @@ const resetPassword = async (req: Request, res: Response) => {
   });
 };
 
+/**
+ * @route GET /api/auth/me
+ * @desc Get current authenticated user
+ * @access Private (requires authentication)
+ */
+const getMe = async (req: Request, res: Response) => {
+  const myId = req.JwtPayload?.userId;
+  if (!myId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  const me = await authService.getMe(myId);
+  res.status(200).json(me);
+};
+
 export default {
   register,
   login,
@@ -124,4 +131,5 @@ export default {
   refreshAccessToken,
   requestResetPassword,
   resetPassword,
+  getMe,
 };

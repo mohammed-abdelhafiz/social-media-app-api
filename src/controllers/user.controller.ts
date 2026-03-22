@@ -22,19 +22,6 @@ const getFollowSuggestions = async (req: Request, res: Response) => {
   res.status(200).json(suggestions);
 };
 
-/**
- * @route GET /api/users/me
- * @desc Get current authenticated user
- * @access Private (Requires authentication)
- */
-const getCurrentUser = async (req: Request, res: Response) => {
-  const currentUserId = req.JwtPayload?.userId;
-  if (!currentUserId) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
-  const user = await usersService.getCurrentUser(currentUserId);
-  res.status(200).json(user);
-};
 
 /**
  * @route GET /api/users/:username
@@ -114,7 +101,6 @@ const getUserFollowing = async (req: Request, res: Response) => {
 
 export default {
   getFollowSuggestions,
-  getCurrentUser,
   getUserProfile,
   updateUserProfile,
   deleteUserAccount,

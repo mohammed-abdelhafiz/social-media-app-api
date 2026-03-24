@@ -1,11 +1,8 @@
 import express from "express";
-import errorHandler from "./middlewares/errorHandler";
+import errorHandler from "./shared/middlewares/errorHandler.middleware";
 import cookieParser from "cookie-parser";
-import authRoutes from "./routes/auth.routes";
-import usersRoutes from "./routes/user.routes";
-import postsRoutes from "./routes/post.routes";
-import commentsRoutes from "./routes/comment.routes";
-import notFoundHandler from "./middlewares/notFoundHandler";
+import router from "./routes";
+import notFoundHandler from "./shared/middlewares/notFoundHandler.middleware";
 
 // Initialize app
 const app = express();
@@ -14,16 +11,13 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 
-// mount routes
-app.use("/api/auth", authRoutes);
-app.use("/api/users", usersRoutes);
-app.use("/api/posts", postsRoutes);
-app.use("/api/comments", commentsRoutes);
+// Routes
+app.use("/api", router);
 
-// handle unhandled routes
+// unhandled routes
 app.use(notFoundHandler);
 
-// error handler
+// global error handler
 app.use(errorHandler);
 
 export default app;

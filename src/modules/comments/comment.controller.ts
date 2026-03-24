@@ -15,7 +15,7 @@ export const createComment = async (req: Request, res: Response) => {
   if (!author) {
     throw new AppError("Unauthorized", 401);
   }
-  const postId = req.params.postId as string;
+  const postId = new mongoose.Types.ObjectId(req.params.postId as string);
   const comment = await commentsService.createComment({
     postId,
     body: parsedBody,
@@ -30,7 +30,7 @@ export const createComment = async (req: Request, res: Response) => {
  * @access Public
  */
 export const getPostComments = async (req: Request, res: Response) => {
-  const postId = req.params.postId as string;
+  const postId = new mongoose.Types.ObjectId(req.params.postId as string);
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 10;
   const comments = await commentsService.getPostComments({
@@ -47,10 +47,15 @@ export const getPostComments = async (req: Request, res: Response) => {
  * @access Private (Requires authentication and ownership)
  */
 export const updateComment = async (req: Request, res: Response) => {
-  const commentId = req.params.commentId as string;
+  const commentId = new mongoose.Types.ObjectId(req.params.commentId as string);
+  const postId = new mongoose.Types.ObjectId(req.params.postId as string);
   const parsedBody = updateCommentDto.parse(req.body);
 
-  const comment = await commentsService.updateComment(commentId, parsedBody);
+  const comment = await commentsService.updateComment({
+    commentId,
+    postId,
+    newCommentData: parsedBody,
+  });
 
   res.status(200).json({
     message: "Comment updated successfully",
@@ -64,9 +69,10 @@ export const updateComment = async (req: Request, res: Response) => {
  * @access Private (Requires authentication and ownership)
  */
 export const deleteComment = async (req: Request, res: Response) => {
-  const commentId = req.params.commentId as string;
+  const commentId = new mongoose.Types.ObjectId(req.params.commentId as string);
+  const postId = new mongoose.Types.ObjectId(req.params.postId as string);
 
-  await commentsService.deleteComment(commentId);
+  await commentsService.deleteComment({commentId, postId});
 
   res.status(200).json({
     message: "Comment deleted successfully",
@@ -79,7 +85,7 @@ export const deleteComment = async (req: Request, res: Response) => {
  * @access Private (Requires authentication)
  */
 export const likeComment = async (req: Request, res: Response) => {
-  const commentId = req.params.commentId as string;
+  const commentId = new mongoose.Types.ObjectId(req.params.commentId as string);
   const userId = req.JwtPayload?.userId as mongoose.Types.ObjectId;
 
   if (!userId) {
@@ -100,7 +106,7 @@ export const likeComment = async (req: Request, res: Response) => {
  * @access Private (Requires authentication)
  */
 export const unlikeComment = async (req: Request, res: Response) => {
-  const commentId = req.params.commentId as string;
+  const commentId = new mongoose.Types.ObjectId(req.params.commentId as string);
   const userId = req.JwtPayload?.userId as mongoose.Types.ObjectId;
 
   if (!userId) {
@@ -121,7 +127,7 @@ export const unlikeComment = async (req: Request, res: Response) => {
  * @access Public
  */
 export const getCommentLikes = async (req: Request, res: Response) => {
-  const commentId = req.params.commentId as string;
+  const commentId = new mongoose.Types.ObjectId(req.params.commentId as string);
   const page = Math.max(1, parseInt(req.query.page as string) || 1);
   const limit = Math.min(
     100,

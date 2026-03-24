@@ -31,7 +31,7 @@ router
   );
 
 router.get("/:username/followers", usersController.getUserFollowers);
-router.get("/:username/following", usersController.getUserFollowings);
+router.get("/:username/followings", usersController.getUserFollowings);
 router.get("/:username/posts", usersController.getUserPosts);
 
 router

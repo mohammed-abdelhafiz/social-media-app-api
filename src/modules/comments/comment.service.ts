@@ -10,7 +10,7 @@ export const createComment = async ({
   body: { content },
   author,
 }: {
-  postId: string;
+  postId: mongoose.Types.ObjectId;
   body: CreateCommentDto;
   author: mongoose.Types.ObjectId;
 }) => {
@@ -26,7 +26,7 @@ export const getPostComments = async ({
   page,
   limit,
 }: {
-  postId: string;
+  postId: mongoose.Types.ObjectId;
   page: number;
   limit: number;
 }) => {
@@ -50,24 +50,42 @@ export const getPostComments = async ({
   };
 };
 
-export const updateComment = async (
-  commentId: string,
-  data: UpdateCommentDto
-) => {
-  const comment = await Comment.findByIdAndUpdate(commentId, data, {
-    new: true,
-  });
+export const updateComment = async ({
+  commentId,
+  postId,
+  newCommentData,
+}: {
+  commentId: mongoose.Types.ObjectId;
+  postId: mongoose.Types.ObjectId;
+  newCommentData: UpdateCommentDto;
+}) => {
+  const comment = await Comment.findOneAndUpdate(
+    { _id: commentId, postId },
+    newCommentData,
+    {
+      new: true,
+    }
+  );
   if (!comment) {
     throw new AppError("Comment not found", 404);
   }
   return comment;
 };
 
-export const deleteComment = async (commentId: string) => {
+export const deleteComment = async ({
+  commentId,
+  postId,
+}: {
+  commentId: mongoose.Types.ObjectId;
+  postId: mongoose.Types.ObjectId;
+}) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
-    const comment = await Comment.findByIdAndDelete(commentId, { session });
+    const comment = await Comment.findOneAndDelete(
+      { _id: commentId, postId },
+      { session }
+    );
     if (!comment) {
       await session.abortTransaction();
       throw new AppError("Comment not found", 404);
@@ -86,16 +104,18 @@ export const deleteComment = async (commentId: string) => {
   }
 };
 export const likeComment = async (
-  commentId: string,
+  commentId: mongoose.Types.ObjectId,
   userId: mongoose.Types.ObjectId
 ) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
-    const commentLike = await CommentLike.create(
-      { commentId, userId },
-      { session }
-    );
+    if (await CommentLike.findOne({ commentId, userId })) {
+      throw new AppError("You have already liked this comment", 404);
+    }
+    const [commentLike] = await CommentLike.create([{ commentId, userId }], {
+      session,
+    });
     await Comment.updateOne(
       { _id: commentId },
       { $inc: { likesCount: 1 } },
@@ -111,7 +131,7 @@ export const likeComment = async (
   }
 };
 export const unlikeComment = async (
-  commentId: string,
+  commentId: mongoose.Types.ObjectId,
   userId: mongoose.Types.ObjectId
 ) => {
   const session = await mongoose.startSession();
@@ -121,6 +141,9 @@ export const unlikeComment = async (
       { commentId, userId },
       { session }
     );
+    if (!commentLike) {
+      throw new AppError("You have not liked this comment", 404);
+    }
     await Comment.updateOne(
       { _id: commentId },
       { $inc: { likesCount: -1 } },
@@ -137,7 +160,7 @@ export const unlikeComment = async (
 };
 
 export const getCommentLikes = async (
-  commentId: string,
+  commentId: mongoose.Types.ObjectId,
   page: number,
   limit: number
 ) => {

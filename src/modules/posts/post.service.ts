@@ -6,6 +6,7 @@ import { Follow } from "../users/follow.model";
 import Comment from "../comments/Comment.model";
 import { PostLike } from "./PostLike.model";
 import { deleteImageFromCloudinary } from "../../shared/utils/cloudinaryUtils";
+import { CreatePostDto } from "./posts.dto";
 
 export const getFeedPosts = async ({
   page,
@@ -59,13 +60,16 @@ export const getPostById = async (postId: mongoose.Types.ObjectId) => {
   return post;
 };
 
-export const createPost = async (data: {
-  content: PostContent;
-  authorId: mongoose.Types.ObjectId;
-}) => {
-  if (!data.content.image && !data.content.text)
+export const createPost = async (
+  author: mongoose.Types.ObjectId,
+  content: PostContent
+) => {
+  if (!content.image && !content.text)
     throw new AppError("Post must have text or image", 400);
-  return Post.create(data);
+  return Post.create({
+    author,
+    content,
+  });
 };
 
 export const updatePost = async (data: {
@@ -74,7 +78,7 @@ export const updatePost = async (data: {
 }) => {
   const post = await Post.findById(data.postId);
   if (!post) throw new AppError("Post not found", 404);
-  if (!data.content.image && !data.content.text)
+  if (!data.content.image && !data.content.text && !data.content.removeOldImage)
     throw new AppError("Post must have text or image", 400);
   if (data.content.text === post.content.text && !data.content.image)
     return post;
@@ -140,6 +144,14 @@ export const likePost = async (
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
+    const post = await Post.findById(postId).session(session);
+    if (!post) throw new AppError("Post not found", 404);
+
+    const postLike = await PostLike.findOne({ postId, userId }).session(
+      session
+    );
+    if (postLike) throw new AppError("You have already liked this post", 404);
+
     await PostLike.create([{ postId, userId }], { session });
 
     await Post.updateOne(
@@ -163,8 +175,14 @@ export const unlikePost = async (
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
-    await PostLike.deleteOne([{ postId, userId }], { session });
+    const post = await Post.findById(postId).session(session);
+    if (!post) throw new AppError("Post not found", 404);
 
+    const postLike = await PostLike.findOneAndDelete(
+      { postId, userId },
+      { session }
+    );
+    if (!postLike) throw new AppError("You have not liked this post", 404);
     await Post.updateOne(
       { _id: postId },
       { $inc: { likesCount: -1 } },
@@ -185,6 +203,8 @@ export const getPostLikes = async (
   limit: number
 ) => {
   const skip = (page - 1) * limit;
+  const post = await Post.findById(postId);
+  if (!post) throw new AppError("Post not found", 404);
   const postLikes = await PostLike.aggregate([
     { $match: { postId } },
     { $sort: { createdAt: -1 } },

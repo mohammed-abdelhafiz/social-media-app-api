@@ -25,8 +25,6 @@ export const getFeedPosts = async (req: Request, res: Response) => {
   res.status(200).json(feedPosts);
 };
 
-
-
 /**
  * @route GET /api/posts/:postId
  * @desc Get a post by ID
@@ -47,15 +45,12 @@ export const createPost = async (req: Request, res: Response) => {
   const parsedBody = createPostDto.parse(req.body);
   const image = req.file;
   const authorId = req.JwtPayload?.userId as mongoose.Types.ObjectId;
-  const newPost = await postService.createPost({
-    content: {
-      text: parsedBody.text,
-      image: image && {
-        url: image.path,
-        publicId: image.filename,
-      },
+  const newPost = await postService.createPost(authorId, {
+    text: parsedBody.text,
+    image: image && {
+      url: image.path,
+      publicId: image.filename,
     },
-    authorId,
   });
   res.status(201).json(newPost);
 };
@@ -68,8 +63,8 @@ export const createPost = async (req: Request, res: Response) => {
 export const updatePost = async (req: Request, res: Response) => {
   const parsedBody = updatePostDto.parse(req.body);
   const image = req.file;
-  const postId =new mongoose.Types.ObjectId(req.params.postId as string);
-  const removeOldImage = Boolean(req.body.removeOldImage);
+  const postId = new mongoose.Types.ObjectId(req.params.postId as string);
+  const removeOldImage = req.body.removeOldImage === "true";
   const updatedPost = await postService.updatePost({
     content: {
       text: parsedBody.text,
@@ -92,7 +87,7 @@ export const updatePost = async (req: Request, res: Response) => {
 export const deletePost = async (req: Request, res: Response) => {
   const postId = new mongoose.Types.ObjectId(req.params.postId as string);
   await postService.deletePost(postId);
-  res.status(204).send();
+  res.status(204).json({ message: "Post deleted successfully" });
 };
 
 /**

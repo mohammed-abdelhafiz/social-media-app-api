@@ -2,7 +2,7 @@ import { Router } from "express";
 import * as controller from "./comment.controller";
 import {authenticate} from "../../shared/middlewares/auth.middleware";
 
-const router = Router();
+const router = Router({ mergeParams: true });
 
 router
   .route("/")

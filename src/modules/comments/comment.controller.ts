@@ -30,6 +30,7 @@ export const createComment = async (req: Request, res: Response) => {
  * @access Public
  */
 export const getPostComments = async (req: Request, res: Response) => {
+  const authenticatedUserId = req.JwtPayload?.userId as mongoose.Types.ObjectId;
   const postId = new mongoose.Types.ObjectId(req.params.postId as string);
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 10;
@@ -37,6 +38,7 @@ export const getPostComments = async (req: Request, res: Response) => {
     postId,
     page,
     limit,
+    authenticatedUserId,
   });
   res.status(200).json(comments);
 };
@@ -69,6 +71,7 @@ export const updateComment = async (req: Request, res: Response) => {
  * @access Private (Requires authentication and ownership)
  */
 export const deleteComment = async (req: Request, res: Response) => {
+  console.log(req.params);
   const commentId = new mongoose.Types.ObjectId(req.params.commentId as string);
   const postId = new mongoose.Types.ObjectId(req.params.postId as string);
 

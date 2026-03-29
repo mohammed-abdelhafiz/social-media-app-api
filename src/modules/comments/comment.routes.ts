@@ -6,7 +6,7 @@ const router = Router({ mergeParams: true });
 
 router
   .route("/")
-  .get(controller.getPostComments)
+  .get(authenticate, controller.getPostComments)
   .post(authenticate, controller.createComment);
 
 router

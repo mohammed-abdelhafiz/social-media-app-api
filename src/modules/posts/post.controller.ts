@@ -42,15 +42,20 @@ export const getPostById = async (req: Request, res: Response) => {
  * @access Private (Requires authentication)
  */
 export const createPost = async (req: Request, res: Response) => {
+  const authenticatedUserId = req.JwtPayload?.userId as mongoose.Types.ObjectId;
   const parsedBody = createPostDto.parse(req.body);
   const image = req.file;
   const authorId = req.JwtPayload?.userId as mongoose.Types.ObjectId;
-  const newPost = await postService.createPost(authorId, {
-    text: parsedBody.text,
-    image: image && {
-      url: image.path,
-      publicId: image.filename,
+  const newPost = await postService.createPost({
+    author: authorId,
+    content: {
+      text: parsedBody.text,
+      image: image && {
+        url: image.path,
+        publicId: image.filename,
+      },
     },
+    authenticatedUserId,
   });
   res.status(201).json(newPost);
 };

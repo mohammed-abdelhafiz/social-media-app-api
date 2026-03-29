@@ -15,8 +15,13 @@ interface UserDocument extends mongoose.Document {
     url: string;
     publicId: string;
   };
+  coverImage?: {
+    url: string;
+    publicId: string;
+  }
   followersCount: number;
   followingCount: number;
+  postsCount: number;
   createPasswordResetToken(): string;
 }
 
@@ -69,8 +74,19 @@ const userSchema = new mongoose.Schema<UserDocument>(
         publicId: "default-avatar",
       },
     },
+    coverImage: {
+      type: {
+        url: String,
+        publicId: String,
+      },
+      default: {
+        url: "https://images.unsplash.com/photo-1660491630578-4299a3c09db0?q=80&w=880&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+        publicId: "default-cover",
+      },
+    },
     followersCount: { type: Number, default: 0 },
     followingCount: { type: Number, default: 0 },
+    postsCount: { type: Number, default: 0 },
   },
   {
     timestamps: true,

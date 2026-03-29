@@ -4,6 +4,8 @@ import AppError from "../../shared/utils/AppError";
 import { CreateCommentDto, UpdateCommentDto } from "./comment.dto";
 import Post from "../posts/Post.model";
 import { CommentLike } from "./CommentLike.model";
+import { GetPostCommentsParams } from "./comment.types";
+import User from "../users/User.model";
 
 export const createComment = async ({
   postId,
@@ -22,24 +24,85 @@ export const createComment = async ({
 };
 
 export const getPostComments = async ({
-  postId,
   page,
   limit,
-}: {
-  postId: mongoose.Types.ObjectId;
-  page: number;
-  limit: number;
-}) => {
-  const post = await Post.findById(postId);
-  if (!post) throw new AppError("Post not found", 404);
-
+  postId,
+  authenticatedUserId,
+}: GetPostCommentsParams) => {
   const skip = (page - 1) * limit;
-  const comments = await Comment.find({ postId })
-    .sort({ createdAt: -1 })
-    .populate("author", "username avatar name")
-    .skip(skip)
-    .limit(limit)
-    .lean();
+
+
+  const comments = await Comment.aggregate([
+    { $match: { postId } },
+    { $sort: { createdAt: -1, _id: -1 } },
+    { $skip: skip },
+    { $limit: limit },
+
+    {
+      $lookup: {
+        from: "users",
+        let: { authorId: "$author" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $eq: ["$_id", "$$authorId"],
+              },
+            },
+          },
+          {
+            $project: {
+              name: 1,
+              username: 1,
+              avatar: 1,
+            },
+          },
+        ],
+        as: "author",
+      },
+    },
+
+    { $unwind: "$author" },
+
+    {
+      $lookup: {
+        from: "commentlikes",
+        let: { commentId: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$commentId", "$$commentId"] },
+                  {
+                    $eq: [
+                      "$userId",
+                      new mongoose.Types.ObjectId(authenticatedUserId),
+                    ],
+                  },
+                ],
+              },
+            },
+          },
+          { $limit: 1 },
+        ],
+        as: "likes",
+      },
+    },
+
+    {
+      $addFields: {
+        isLiked: { $gt: [{ $size: "$likes" }, 0] },
+      },
+    },
+
+    {
+      $project: {
+        likes: 0,
+        __v: 0,
+      },
+    },
+  ]);
   const totalPostComments = await Comment.countDocuments({ postId });
   const hasNextPage = skip + limit < totalPostComments;
   return {
@@ -111,9 +174,9 @@ export const likeComment = async (
   session.startTransaction();
   try {
     if (await CommentLike.findOne({ commentId, userId })) {
-      throw new AppError("You have already liked this comment", 404);
+      throw new AppError("You have already liked this comment", 400);
     }
-    const [commentLike] = await CommentLike.create([{ commentId, userId }], {
+    const commentLike = await CommentLike.create([{ commentId, userId }], {
       session,
     });
     await Comment.updateOne(
@@ -165,27 +228,22 @@ export const getCommentLikes = async (
   limit: number
 ) => {
   const skip = (page - 1) * limit;
-
-  const commentLikes = await CommentLike.aggregate([
-    { $match: { commentId } },
-    { $sort: { createdAt: -1 } },
-    { $skip: skip },
-    { $limit: limit },
-    {
-      $lookup: {
-        from: "users",
-        localField: "userId",
-        foreignField: "_id",
-        as: "likedBy",
-      },
-    },
-  ]);
-  const comment = await Comment.findById(commentId).lean();
+  const comment = await Comment.findById(commentId);
   if (!comment) throw new AppError("Comment not found", 404);
-  const hasNextPage = skip + limit < (comment?.likesCount || 0);
+  const commentLikedByIds = await CommentLike.find({ commentId }).distinct("userId");
+
+  const commentLikedBy = await User.find({ _id: { $in: commentLikedByIds } })
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit)
+    .lean();
+
+  const totalCommentLikes = await CommentLike.countDocuments({ commentId });
+
+  const hasNextPage = skip + limit < totalCommentLikes;
   return {
-    data: commentLikes,
-    total: comment?.likesCount || 0,
+    data: commentLikedBy,
+    total: totalCommentLikes,
     hasNextPage,
     nextPage: hasNextPage ? page + 1 : null,
   };

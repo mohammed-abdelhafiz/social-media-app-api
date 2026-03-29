@@ -1,12 +1,16 @@
 import mongoose from "mongoose";
 import Post from "./Post.model";
 import AppError from "../../shared/utils/AppError";
-import { GetFeedPostsParams, PostContent } from "./post.types";
+import {
+  CreatePostParams,
+  GetFeedPostsParams,
+  PostContent,
+} from "./post.types";
 import { Follow } from "../users/follow.model";
 import Comment from "../comments/Comment.model";
 import { PostLike } from "./PostLike.model";
 import { deleteImageFromCloudinary } from "../../shared/utils/cloudinaryUtils";
-import { CreatePostDto } from "./posts.dto";
+import User from "../users/User.model";
 
 export const getFeedPosts = async ({
   page,
@@ -34,12 +38,77 @@ export const getFeedPosts = async ({
 
     matchQuery.author = { $in: followingUserIds };
   }
-  const posts = await Post.find(matchQuery)
-    .sort({ createdAt: -1, _id: -1 })
-    .populate("author", "username avatar name")
-    .skip(skip)
-    .limit(limit)
-    .lean();
+  const posts = await Post.aggregate([
+    { $match: matchQuery },
+    { $sort: { createdAt: -1, _id: -1 } },
+    { $skip: skip },
+    { $limit: limit },
+
+    {
+      $lookup: {
+        from: "users",
+        let: { authorId: "$author" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $eq: ["$_id", "$$authorId"],
+              },
+            },
+          },
+          {
+            $project: {
+              name: 1,
+              username: 1,
+              avatar: 1,
+            },
+          },
+        ],
+        as: "author",
+      },
+    },
+
+    { $unwind: "$author" },
+
+    {
+      $lookup: {
+        from: "postlikes",
+        let: { postId: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$postId", "$$postId"] },
+                  {
+                    $eq: [
+                      "$userId",
+                      new mongoose.Types.ObjectId(authenticatedUserId),
+                    ],
+                  },
+                ],
+              },
+            },
+          },
+          { $limit: 1 },
+        ],
+        as: "likes",
+      },
+    },
+
+    {
+      $addFields: {
+        isLiked: { $gt: [{ $size: "$likes" }, 0] },
+      },
+    },
+
+    {
+      $project: {
+        likes: 0,
+        __v: 0,
+      },
+    },
+  ]);
   const totalPosts = await Post.countDocuments(matchQuery);
   const hasNextPage = skip + limit < totalPosts;
   return {
@@ -60,16 +129,30 @@ export const getPostById = async (postId: mongoose.Types.ObjectId) => {
   return post;
 };
 
-export const createPost = async (
-  author: mongoose.Types.ObjectId,
-  content: PostContent
-) => {
+export const createPost = async ({
+  author,
+  content,
+  authenticatedUserId,
+}: CreatePostParams) => {
   if (!content.image && !content.text)
     throw new AppError("Post must have text or image", 400);
-  return Post.create({
-    author,
-    content,
-  });
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    const [post] = await Post.create([{ author, content }], { session });
+    await User.updateOne(
+      { _id: authenticatedUserId },
+      { $inc: { postsCount: 1 } },
+      { session }
+    );
+    await session.commitTransaction();
+    return post;
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
+  }
 };
 
 export const updatePost = async (data: {
@@ -78,13 +161,17 @@ export const updatePost = async (data: {
 }) => {
   const post = await Post.findById(data.postId);
   if (!post) throw new AppError("Post not found", 404);
-  if (!data.content.image && !data.content.text && !data.content.removeOldImage)
+  console.log(data.content);
+  if (
+    !data.content.image &&
+    !data.content.text &&
+    !post.content.image &&
+    !post.content.text
+  )
     throw new AppError("Post must have text or image", 400);
   if (data.content.text === post.content.text && !data.content.image)
     return post;
-  if (data.content.text) {
-    post.content.text = data.content.text;
-  }
+  post.content.text = data.content.text;
   let public_idToDelete;
   if (data.content.image) {
     public_idToDelete = post.content.image?.publicId;
@@ -205,26 +292,19 @@ export const getPostLikes = async (
   const skip = (page - 1) * limit;
   const post = await Post.findById(postId);
   if (!post) throw new AppError("Post not found", 404);
-  const postLikes = await PostLike.aggregate([
-    { $match: { postId } },
-    { $sort: { createdAt: -1 } },
-    { $skip: skip },
-    { $limit: limit },
-    {
-      $lookup: {
-        from: "users",
-        localField: "userId",
-        foreignField: "_id",
-        as: "likedBy",
-      },
-    },
-  ]);
+  const postLikedByIds = await PostLike.find({ postId }).distinct("userId");
+
+  const postLikedBy = await User.find({ _id: { $in: postLikedByIds } })
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit)
+    .lean();
 
   const totalPostLikes = await PostLike.countDocuments({ postId });
 
   const hasNextPage = skip + limit < totalPostLikes;
   return {
-    data: postLikes,
+    data: postLikedBy,
     total: totalPostLikes,
     hasNextPage,
     nextPage: hasNextPage ? page + 1 : null,

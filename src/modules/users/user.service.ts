@@ -6,6 +6,7 @@ import { Follow } from "./follow.model";
 import { deleteImageFromCloudinary } from "../../shared/utils/cloudinaryUtils";
 import Post from "../posts/Post.model";
 import { PostLike } from "../posts/PostLike.model";
+import { getUserPostsArgs } from "./user.types";
 
 export const getFollowSuggestions = async ({
   currentUserId,
@@ -40,8 +41,52 @@ export const getFollowSuggestions = async ({
   };
 };
 
-export const getUserProfile = async (username: string) => {
-  const user = await User.findOne({ username });
+export const getUserProfile = async ({
+  username,
+  authenticatedUserId,
+}: {
+  username: string;
+  authenticatedUserId: mongoose.Types.ObjectId;
+}) => {
+  const user = await User.aggregate([
+    { $match: { username } },
+    {
+      $lookup: {
+        from: "follows",
+        let: { userId: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $eq: {
+                  $and: [
+                    { $eq: ["$followingId", "$$userId"] },
+                    { $eq: ["$followerId", authenticatedUserId] },
+                  ],
+                },
+              },
+            },
+          },
+          {
+            $sort: {
+              createdAt: -1,
+            },
+          },
+        ],
+        as: "follows",
+      },
+    },
+    {
+      $addFields: {
+        isFollowing: { $size: "$follows" },
+      },
+    },
+    {
+      $project: {
+        follows: 0,
+      },
+    },
+  ]);
   if (!user) {
     throw new AppError("User not found", 404);
   }
@@ -108,40 +153,122 @@ export const getUserPosts = async ({
   page,
   limit,
   filter,
-}: {
-  username: string;
-  page: number;
-  limit: number;
-  filter?: string;
-}) => {
+  authenticatedUserId,
+}: getUserPostsArgs) => {
   const skip = (page - 1) * limit;
 
   let matchQuery: Record<string, unknown> = {};
 
-  const user = await User.findOne({ username });
-  if (!user) {
-    throw new AppError("User not found", 404);
-  }
-
-  const userLikedPostsIds = await PostLike.find({ userId: user._id }).distinct(
-    "_id"
-  );
-
   if (filter === "liked") {
-    matchQuery._id = { $in: userLikedPostsIds };
-  } else {
-    matchQuery.author = user._id;
+    const likedPostIds = await PostLike.find({
+      userId: authenticatedUserId,
+    }).distinct("postId");
+
+    if (likedPostIds.length === 0) {
+      return {
+        data: [],
+        total: 0,
+        hasNextPage: false,
+        nextPage: null,
+      };
+    }
+
+    matchQuery._id = { $in: likedPostIds };
+  } else if (filter === "posted") {
+    const user = await User.findOne({ username });
+    if (!user) {
+      throw new AppError("User not found", 404);
+    }
+    const userPostsIds = await Post.find({
+      author: user._id,
+    }).distinct("_id");
+
+    if (userPostsIds.length === 0) {
+      return {
+        data: [],
+        total: 0,
+        hasNextPage: false,
+        nextPage: null,
+      };
+    }
+
+    matchQuery._id = { $in: userPostsIds };
   }
-  const profilePosts = await Post.find(matchQuery)
-    .sort({ createdAt: -1 })
-    .populate("author", "username avatar name")
-    .skip(skip)
-    .limit(limit)
-    .lean();
+  const posts = await Post.aggregate([
+    { $match: matchQuery },
+    { $sort: { createdAt: -1, _id: -1 } },
+    { $skip: skip },
+    { $limit: limit },
+
+    {
+      $lookup: {
+        from: "users",
+        let: { authorId: "$author" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $eq: ["$_id", "$$authorId"],
+              },
+            },
+          },
+          {
+            $project: {
+              name: 1,
+              username: 1,
+              avatar: 1,
+            },
+          },
+        ],
+        as: "author",
+      },
+    },
+
+    { $unwind: "$author" },
+
+    {
+      $lookup: {
+        from: "postlikes",
+        let: { postId: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$postId", "$$postId"] },
+                  {
+                    $eq: [
+                      "$userId",
+                      new mongoose.Types.ObjectId(authenticatedUserId),
+                    ],
+                  },
+                ],
+              },
+            },
+          },
+          { $limit: 1 },
+        ],
+        as: "likes",
+      },
+    },
+
+    {
+      $addFields: {
+        isLiked: { $gt: [{ $size: "$likes" }, 0] },
+      },
+    },
+
+    {
+      $project: {
+        likes: 0,
+        __v: 0,
+      },
+    },
+  ]);
   const totalPosts = await Post.countDocuments(matchQuery);
   const hasNextPage = skip + limit < totalPosts;
   return {
-    data: profilePosts,
+    data: posts,
     total: totalPosts,
     hasNextPage,
     nextPage: hasNextPage ? page + 1 : null,
@@ -225,27 +352,59 @@ export const getUserFollowing = async ({
 };
 
 export const followUser = async (
-  followerId: mongoose.Types.ObjectId,
-  followingId: mongoose.Types.ObjectId
+  authenticatedUserId: mongoose.Types.ObjectId,
+  targetUsername: string
 ) => {
-  if (followerId.equals(followingId)) {
-    throw new Error("You can't follow yourself");
+  const targetUser = await User.findOne({ username: targetUsername });
+  if (!targetUser) {
+    throw new AppError("User not found", 404);
   }
-  const followResult = Follow.create({ followerId, followingId });
-  await User.updateOne({ _id: followingId }, { $inc: { followersCount: 1 } });
-  await User.updateOne({ _id: followerId }, { $inc: { followingCount: 1 } });
-  return followResult;
+  if (targetUser._id.equals(authenticatedUserId)) {
+    throw new AppError("You can't follow yourself", 400);
+  }
+  if (
+    await Follow.findOne({
+      followerId: authenticatedUserId,
+      followingId: targetUser._id,
+    })
+  ) {
+    throw new AppError("You are already following this user", 400);
+  }
+  Follow.create({
+    followerId: authenticatedUserId,
+    followingId: targetUser._id,
+  });
+  await User.updateOne(
+    { _id: targetUser._id },
+    { $inc: { followersCount: 1 } }
+  );
+  await User.updateOne(
+    { _id: authenticatedUserId },
+    { $inc: { followingCount: 1 } }
+  );
 };
 
 export const unfollowUser = async (
-  followerId: mongoose.Types.ObjectId,
-  followingId: mongoose.Types.ObjectId
+  authenticatedUserId: mongoose.Types.ObjectId,
+  targetUsername: string
 ) => {
-  if (followerId.equals(followingId)) {
-    throw new Error("You can't unfollow yourself");
+  const targetUser = await User.findOne({ username: targetUsername });
+  if (!targetUser) {
+    throw new AppError("User not found", 404);
   }
-  const unfollowResult = Follow.deleteOne({ followerId, followingId });
-  await User.updateOne({ _id: followingId }, { $inc: { followersCount: -1 } });
-  await User.updateOne({ _id: followerId }, { $inc: { followingCount: -1 } });
-  return unfollowResult;
+  if (targetUser._id.equals(authenticatedUserId)) {
+    throw new AppError("You can't unfollow yourself", 400);
+  }
+  Follow.deleteOne({
+    followerId: authenticatedUserId,
+    followingId: targetUser._id,
+  });
+  await User.updateOne(
+    { _id: targetUser._id },
+    { $inc: { followersCount: -1 } }
+  );
+  await User.updateOne(
+    { _id: authenticatedUserId },
+    { $inc: { followingCount: -1 } }
+  );
 };

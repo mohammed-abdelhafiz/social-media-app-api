@@ -17,3 +17,10 @@ export interface GetFeedPostsParams {
   filter?: string;
   authenticatedUserId: mongoose.Types.ObjectId;
 }
+
+
+export interface CreatePostParams {
+  author: mongoose.Types.ObjectId;
+  content: PostContent;
+  authenticatedUserId: mongoose.Types.ObjectId;
+}

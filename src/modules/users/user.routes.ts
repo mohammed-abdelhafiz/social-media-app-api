@@ -32,7 +32,7 @@ router
 
 router.get("/:username/followers", usersController.getUserFollowers);
 router.get("/:username/followings", usersController.getUserFollowings);
-router.get("/:username/posts", usersController.getUserPosts);
+router.get("/:username/posts",authenticate, usersController.getUserPosts);
 
 router
   .route("/:username/follow")

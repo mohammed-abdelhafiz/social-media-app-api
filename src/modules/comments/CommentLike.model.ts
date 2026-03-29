@@ -17,7 +17,7 @@ const CommentLikeSchema = new mongoose.Schema<CommentLikeDocument>(
   { timestamps: true }
 );
 
-CommentLikeSchema.index({ userId: 1, postId: 1 }, { unique: true });
+CommentLikeSchema.index({ userId: 1, commentId: 1 }, { unique: true });
 
 export const CommentLike = mongoose.model<CommentLikeDocument>(
   "CommentLike",

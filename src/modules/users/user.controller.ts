@@ -30,8 +30,9 @@ export const getFollowSuggestions = async (req: Request, res: Response) => {
  * @access Public
  */
 export const getUserProfile = async (req: Request, res: Response) => {
+  const authenticatedUserId = req.JwtPayload?.userId as mongoose.Types.ObjectId;
   const username = req.params.username as string;
-  const user = await usersService.getUserProfile(username);
+  const user = await usersService.getUserProfile({username,authenticatedUserId});
   res.status(200).json(user);
 };
 
@@ -74,6 +75,7 @@ export const deleteUserProfile = async (req: Request, res: Response) => {
  */
 
 export const getUserPosts = async (req: Request, res: Response) => {
+  const authenticatedUserId = req.JwtPayload?.userId as mongoose.Types.ObjectId;
   const username = req.params.username as string;
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 10;
@@ -83,6 +85,7 @@ export const getUserPosts = async (req: Request, res: Response) => {
     page,
     limit,
     filter,
+    authenticatedUserId,
   });
   res.status(200).json(userPosts);
 };
@@ -122,7 +125,7 @@ export const getUserFollowings = async (req: Request, res: Response) => {
 };
 
 /**
- * @route POST /api/users/:userId/follow
+ * @route POST /api/users/:username/follow
  * @desc Follow a user
  * @access Private (Requires authentication)
  * */
@@ -131,16 +134,16 @@ export const followUser = async (req: Request, res: Response) => {
   if (!authenticatedUserId) {
     throw new AppError("Unauthorized", 401);
   }
-  const targetUserId = new mongoose.Types.ObjectId(req.params.userId as string);
-  const result = await usersService.followUser(
+  const targetUsername = req.params.username as string
+  await usersService.followUser(
     authenticatedUserId,
-    targetUserId
+    targetUsername
   );
-  res.status(201).json(result);
+  res.status(200).json({ message: "followed successfully" });
 };
 
 /**
- * @route DELETE /api/users/:userId/follow
+ * @route DELETE /api/users/:username/follow
  * @desc Unfollow a user
  * @access Private (Requires authentication)
  * */
@@ -149,7 +152,7 @@ export const unfollowUser = async (req: Request, res: Response) => {
   if (!authenticatedUserId) {
     throw new AppError("Unauthorized", 401);
   }
-  const targetUserId = new mongoose.Types.ObjectId(req.params.userId as string);
-  await usersService.unfollowUser(authenticatedUserId, targetUserId);
-  res.status(204).send();
+  const targetUsername = req.params.username as string
+  await usersService.unfollowUser(authenticatedUserId, targetUsername);
+  res.status(20).json({ message: "unfollowed successfully" });
 };

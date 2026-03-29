@@ -2,7 +2,7 @@ import "./shared/config/env.config";
 import app from "./app";
 import { connectToDb } from "./shared/config/db.config";
 
-const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000; // حوّل string لـ number
+const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 
 const startServer = async () => {
   try {

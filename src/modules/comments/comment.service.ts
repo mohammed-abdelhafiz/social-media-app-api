@@ -6,6 +6,8 @@ import Post from "../posts/Post.model";
 import { CommentLike } from "./CommentLike.model";
 import { GetPostCommentsParams } from "./comment.types";
 import User from "../users/User.model";
+import notificationService from "../notifications/notification.service";
+import { NotificationType } from "../notifications/Notification.model";
 
 export const createComment = async ({
   postId,
@@ -20,6 +22,16 @@ export const createComment = async ({
   if (!post) throw new AppError("Post not found", 404);
   const comment = await Comment.create({ postId, content, author });
   await Post.updateOne({ _id: postId }, { $inc: { commentsCount: 1 } });
+
+  // Create notification
+  await notificationService.createNotification({
+    recipient: post.author,
+    sender: author,
+    type: NotificationType.COMMENT,
+    post: postId,
+    comment: comment._id as mongoose.Types.ObjectId,
+  });
+
   return comment;
 };
 
@@ -184,6 +196,18 @@ export const likeComment = async (
       { $inc: { likesCount: 1 } },
       { session }
     );
+
+    // Create notification (need to find comment to get recipient)
+    const comment = await Comment.findById(commentId).session(session);
+    if (comment) {
+      await notificationService.createNotification({
+        recipient: comment.author,
+        sender: userId,
+        type: NotificationType.LIKE,
+        comment: commentId,
+      });
+    }
+
     await session.commitTransaction();
     return commentLike;
   } catch (error) {

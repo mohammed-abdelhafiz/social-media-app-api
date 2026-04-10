@@ -7,6 +7,8 @@ import { deleteImageFromCloudinary } from "../../shared/utils/cloudinaryUtils";
 import Post from "../posts/Post.model";
 import { PostLike } from "../posts/PostLike.model";
 import { getUserPostsArgs } from "./user.types";
+import notificationService from "../notifications/notification.service";
+import { NotificationType } from "../notifications/Notification.model";
 
 export const getFollowSuggestions = async ({
   currentUserId,
@@ -375,6 +377,13 @@ export const followUser = async (
     { _id: authenticatedUserId },
     { $inc: { followingCount: 1 } }
   );
+
+  // Create notification
+  await notificationService.createNotification({
+    recipient: targetUser._id,
+    sender: authenticatedUserId,
+    type: NotificationType.FOLLOW,
+  });
 };
 
 export const unfollowUser = async (

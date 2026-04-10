@@ -11,6 +11,8 @@ import Comment from "../comments/Comment.model";
 import { PostLike } from "./PostLike.model";
 import { deleteImageFromCloudinary } from "../../shared/utils/cloudinaryUtils";
 import User from "../users/User.model";
+import notificationService from "../notifications/notification.service";
+import { NotificationType } from "../notifications/Notification.model";
 
 export const getFeedPosts = async ({
   page,
@@ -246,6 +248,15 @@ export const likePost = async (
       { $inc: { likesCount: 1 } },
       { session }
     );
+
+    // Create notification
+    await notificationService.createNotification({
+      recipient: post.author,
+      sender: userId,
+      type: NotificationType.LIKE,
+      post: postId,
+    });
+
     await session.commitTransaction();
   } catch (error) {
     await session.abortTransaction();

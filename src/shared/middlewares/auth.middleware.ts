@@ -19,6 +19,21 @@ export const authenticate = async (
   next();
 };
 
+export const optionalAuthenticate = async (
+  req: Request,
+  _res: Response,
+  next: NextFunction
+) => {
+  const token = req.cookies.accessToken;
+  if (token) {
+    const jwtPayload = verifyAccessToken(token);
+    if (jwtPayload) {
+      req.JwtPayload = jwtPayload;
+    }
+  }
+  next();
+};
+
 export const authorizePostOwner = async (
   req: Request,
   res: Response,

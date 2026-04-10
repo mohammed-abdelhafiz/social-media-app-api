@@ -10,7 +10,9 @@ import AppError from "../../shared/utils/AppError";
  * @access Public
  */
 export const getFollowSuggestions = async (req: Request, res: Response) => {
-  const currentUserId = req.JwtPayload?.userId as mongoose.Types.ObjectId;
+  const currentUserId = req.JwtPayload?.userId 
+    ? new mongoose.Types.ObjectId(req.JwtPayload.userId as unknown as string) 
+    : undefined;
   if (!currentUserId) {
     return res.status(401).json({ message: "Unauthorized" });
   }
@@ -30,9 +32,14 @@ export const getFollowSuggestions = async (req: Request, res: Response) => {
  * @access Public
  */
 export const getUserProfile = async (req: Request, res: Response) => {
-  const authenticatedUserId = req.JwtPayload?.userId as mongoose.Types.ObjectId;
+  const authenticatedUserId = req.JwtPayload?.userId 
+    ? new mongoose.Types.ObjectId(req.JwtPayload.userId as unknown as string) 
+    : undefined;
   const username = req.params.username as string;
-  const user = await usersService.getUserProfile({username,authenticatedUserId});
+  const user = await usersService.getUserProfile({
+    username,
+    authenticatedUserId: authenticatedUserId as mongoose.Types.ObjectId
+  });
   res.status(200).json(user);
 };
 
@@ -75,7 +82,9 @@ export const deleteUserProfile = async (req: Request, res: Response) => {
  */
 
 export const getUserPosts = async (req: Request, res: Response) => {
-  const authenticatedUserId = req.JwtPayload?.userId as mongoose.Types.ObjectId;
+  const authenticatedUserId = req.JwtPayload?.userId 
+    ? new mongoose.Types.ObjectId(req.JwtPayload.userId as unknown as string) 
+    : undefined;
   const username = req.params.username as string;
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 10;
@@ -85,7 +94,7 @@ export const getUserPosts = async (req: Request, res: Response) => {
     page,
     limit,
     filter,
-    authenticatedUserId,
+    authenticatedUserId: authenticatedUserId as mongoose.Types.ObjectId,
   });
   res.status(200).json(userPosts);
 };
@@ -136,7 +145,7 @@ export const followUser = async (req: Request, res: Response) => {
   }
   const targetUsername = req.params.username as string
   await usersService.followUser(
-    authenticatedUserId,
+    new mongoose.Types.ObjectId(authenticatedUserId as unknown as string),
     targetUsername
   );
   res.status(200).json({ message: "followed successfully" });
@@ -153,6 +162,10 @@ export const unfollowUser = async (req: Request, res: Response) => {
     throw new AppError("Unauthorized", 401);
   }
   const targetUsername = req.params.username as string
-  await usersService.unfollowUser(authenticatedUserId, targetUsername);
-  res.status(20).json({ message: "unfollowed successfully" });
+  await usersService.unfollowUser(
+    new mongoose.Types.ObjectId(authenticatedUserId as unknown as string),
+    targetUsername
+  );
+  res.status(200).json({ message: "unfollowed successfully" });
 };
+

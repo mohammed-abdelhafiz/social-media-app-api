@@ -46,51 +46,44 @@ export const getUserProfile = async ({
   authenticatedUserId,
 }: {
   username: string;
-  authenticatedUserId: mongoose.Types.ObjectId;
+  authenticatedUserId?: mongoose.Types.ObjectId;
 }) => {
-  const user = await User.aggregate([
-    { $match: { username } },
-    {
-      $lookup: {
-        from: "follows",
-        let: { userId: "$_id" },
-        pipeline: [
-          {
-            $match: {
-              $expr: {
-                $eq: {
-                  $and: [
-                    { $eq: ["$followingId", "$$userId"] },
-                    { $eq: ["$followerId", authenticatedUserId] },
-                  ],
-                },
-              },
-            },
-          },
-          {
-            $sort: {
-              createdAt: -1,
-            },
-          },
-        ],
-        as: "follows",
-      },
-    },
-    {
-      $addFields: {
-        isFollowing: { $size: "$follows" },
-      },
-    },
-    {
-      $project: {
-        follows: 0,
-      },
-    },
-  ]);
-  if (!user) {
-    throw new AppError("User not found", 404);
+  const user = await User.aggregate([{ $match: { username } }]);
+
+  const userDoc = user[0];
+  
+  // Correction logic: if counts are negative due to previous bugs, fix them in the DB and locally.
+  let corrected = false;
+  const updates: Record<string, number> = {};
+  
+  if (userDoc.followersCount < 0) {
+    userDoc.followersCount = 0;
+    updates.followersCount = 0;
+    corrected = true;
   }
-  return user;
+  if (userDoc.followingCount < 0) {
+    userDoc.followingCount = 0;
+    updates.followingCount = 0;
+    corrected = true;
+  }
+  
+  if (corrected) {
+    await User.updateOne({ _id: userDoc._id }, { $set: updates });
+  }
+
+  let isFollowing = false;
+  if (authenticatedUserId) {
+    const followDoc = await Follow.findOne({
+      followerId: authenticatedUserId,
+      followingId: userDoc._id,
+    });
+    isFollowing = !!followDoc;
+  }
+
+  return {
+    ...userDoc,
+    isFollowing,
+  };
 };
 
 export const updateUserProfile = async (
@@ -370,7 +363,7 @@ export const followUser = async (
   ) {
     throw new AppError("You are already following this user", 400);
   }
-  Follow.create({
+  await Follow.create({
     followerId: authenticatedUserId,
     followingId: targetUser._id,
   });
@@ -395,16 +388,29 @@ export const unfollowUser = async (
   if (targetUser._id.equals(authenticatedUserId)) {
     throw new AppError("You can't unfollow yourself", 400);
   }
-  Follow.deleteOne({
+  const deleteResult = await Follow.deleteOne({
     followerId: authenticatedUserId,
     followingId: targetUser._id,
   });
-  await User.updateOne(
-    { _id: targetUser._id },
-    { $inc: { followersCount: -1 } }
-  );
-  await User.updateOne(
-    { _id: authenticatedUserId },
-    { $inc: { followingCount: -1 } }
-  );
+
+  if (deleteResult.deletedCount > 0) {
+    await User.updateOne(
+      { _id: targetUser._id },
+      { $inc: { followersCount: -1 } }
+    );
+    await User.updateOne(
+      { _id: authenticatedUserId },
+      { $inc: { followingCount: -1 } }
+    );
+  } else {
+    // If deletedCount is 0, they were not following. Let's fix the user counts if it got negative due to previous bugs.
+    await User.updateOne(
+      { _id: targetUser._id, followersCount: { $lt: 0 } },
+      { $set: { followersCount: 0 } }
+    );
+    await User.updateOne(
+      { _id: authenticatedUserId, followingCount: { $lt: 0 } },
+      { $set: { followingCount: 0 } }
+    );
+  }
 };

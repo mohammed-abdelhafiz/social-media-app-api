@@ -2,6 +2,7 @@ import { Router } from "express";
 import * as usersController from "./user.controller";
 import {
   authenticate,
+  optionalAuthenticate,
   authorizeProfileOwner,
 } from "../../shared/middlewares/auth.middleware";
 import upload from "../../shared/config/multer.config";
@@ -14,7 +15,7 @@ router.get(
   usersController.getFollowSuggestions
 );
 
-router.route("/:username").get(usersController.getUserProfile);
+router.route("/:username").get(optionalAuthenticate, usersController.getUserProfile);
 
 router
   .route("/:userId")

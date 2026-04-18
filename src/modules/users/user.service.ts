@@ -91,7 +91,10 @@ export const getUserProfile = async ({
 export const updateUserProfile = async (
   userId: mongoose.Types.ObjectId,
   data: UpdateUserProfileDto,
-  profilePicture: { url?: string; publicId?: string }
+  images: {
+    avatar?: { url: string; publicId: string };
+    coverImage?: { url: string; publicId: string };
+  }
 ) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -100,18 +103,32 @@ export const updateUserProfile = async (
     if (!user) {
       throw new AppError("User not found", 404);
     }
+
+    const { avatar, coverImage } = images;
     const oldAvatarPublicId = user.avatar?.publicId;
+    const oldCoverPublicId = user.coverImage?.publicId;
+
+    const updateData: any = { ...data };
+    if (avatar) updateData.avatar = avatar;
+    if (coverImage) updateData.coverImage = coverImage;
+
     const updatedUser = await User.findByIdAndUpdate(
       user._id,
-      {
-        ...data,
-        avatar: profilePicture.url ? profilePicture : user.avatar,
-      },
+      { $set: updateData },
       { new: true }
     );
-    if (profilePicture.url && oldAvatarPublicId) {
+
+    if (avatar && oldAvatarPublicId && oldAvatarPublicId !== "default-avatar") {
       await deleteImageFromCloudinary(oldAvatarPublicId);
     }
+    if (
+      coverImage &&
+      oldCoverPublicId &&
+      oldCoverPublicId !== "default-cover"
+    ) {
+      await deleteImageFromCloudinary(oldCoverPublicId);
+    }
+
     await session.commitTransaction();
     return updatedUser;
   } catch (error) {

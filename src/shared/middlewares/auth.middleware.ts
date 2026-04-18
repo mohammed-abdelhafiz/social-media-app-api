@@ -3,6 +3,7 @@ import { verifyAccessToken } from "../utils/jwt";
 import AppError from "../utils/AppError";
 import Comment from "../../modules/comments/Comment.model";
 import Post from "../../modules/posts/Post.model";
+import User from "../../modules/users/User.model";
 import mongoose from "mongoose";
 
 export const authenticate = async (
@@ -75,7 +76,7 @@ export const authorizeProfileOwner = async (
 ) => {
   const userId = req.params.userId as string;
   const loggedInUserId = req.JwtPayload?.userId;
-  const user = await Post.findById(userId);
+  const user = await User.findById(userId);
   if (!user) {
     throw new AppError("User not found", 404);
   }

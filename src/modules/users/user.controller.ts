@@ -51,11 +51,16 @@ export const getUserProfile = async (req: Request, res: Response) => {
 export const updateUserProfile = async (req: Request, res: Response) => {
   const userId = new mongoose.Types.ObjectId(req.params.userId as string);
   const parsedBody = updateUserProfileDto.parse(req.body);
-  const profilePicture = req.file;
+  
+  const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+  const avatarFile = files?.avatar?.[0];
+  const coverImageFile = files?.coverImage?.[0];
+
   const updatedUser = await usersService.updateUserProfile(userId, parsedBody, {
-    url: profilePicture?.path,
-    publicId: profilePicture?.filename,
+    avatar: avatarFile ? { url: avatarFile.path, publicId: avatarFile.filename } : undefined,
+    coverImage: coverImageFile ? { url: coverImageFile.path, publicId: coverImageFile.filename } : undefined,
   });
+
   res.status(200).json({
     message: "profile updated successfully",
     user: updatedUser,

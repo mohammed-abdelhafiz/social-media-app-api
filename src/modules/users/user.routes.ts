@@ -22,7 +22,10 @@ router
   .put(
     authenticate,
     authorizeProfileOwner,
-    upload.single("profilePicture"),
+    upload.fields([
+      { name: "avatar", maxCount: 1 },
+      { name: "coverImage", maxCount: 1 },
+    ]),
     usersController.updateUserProfile
   )
   .delete(

@@ -1,8 +1,8 @@
 import express from "express";
-import errorHandler from "./shared/middlewares/errorHandler.middleware";
+import errorHandler from "@/shared/middlewares/errorHandler.middleware";
 import cookieParser from "cookie-parser";
-import router from "./routes";
-import notFoundHandler from "./shared/middlewares/notFoundHandler.middleware";
+import router from "@/routes";
+import notFoundHandler from "@/shared/middlewares/notFoundHandler.middleware";
 
 // Initialize app
 const app = express();

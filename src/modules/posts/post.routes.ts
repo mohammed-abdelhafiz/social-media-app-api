@@ -3,8 +3,8 @@ import * as postsController from "./post.controller";
 import {
   authorizePostOwner,
   authenticate,
-} from "../../shared/middlewares/auth.middleware";
-import upload from "../../shared/config/multer.config";
+} from "@/shared/middlewares/auth.middleware";
+import upload from "@/shared/config/multer.config";
 
 const router = Router();
 

@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import * as authService from "./auth.service";
-import { setTokensInCookies } from "../../shared/utils/jwt";
+import { setTokensInCookies } from "@/shared/utils/jwt";
 import {
   forgotPasswordDto,
   loginDto,

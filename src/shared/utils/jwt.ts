@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import type { JwtPayload } from "../types";
+import type { JwtPayload } from "@/shared/types";
 import { Response } from "express";
 import mongoose from "mongoose";
 

@@ -1,4 +1,4 @@
-import transporter from "../config/nodemailer.config";
+import transporter from "@/shared/config/nodemailer.config";
 
 const clientUrl = process.env.CLIENT_URL;
 

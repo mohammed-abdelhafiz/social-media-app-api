@@ -1,6 +1,6 @@
-import "./shared/config/env.config";
-import app from "./app";
-import { connectToDb } from "./shared/config/db.config";
+import "@/shared/config/env.config";
+import app from "@/app";
+import { connectToDb } from "@/shared/config/db.config";
 
 const PORT = Number(process.env.PORT) || 5000;
 

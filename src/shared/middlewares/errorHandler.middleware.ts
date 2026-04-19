@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import * as z from "zod";
-import AppError from "../utils/AppError";
+import AppError from "@/shared/utils/AppError";
 
 // MongoDB duplicate key error typing
 interface MongoError extends Error {

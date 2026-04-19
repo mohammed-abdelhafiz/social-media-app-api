@@ -1,4 +1,4 @@
-import cloudinary from "../config/cloudinary.config";
+import cloudinary from "@/shared/config/cloudinary.config";
 
 export const deleteImageFromCloudinary = async (
   publicId: string | null | undefined

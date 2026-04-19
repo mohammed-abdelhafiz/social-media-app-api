@@ -1,5 +1,5 @@
 import { Request } from "express";
-import AppError from "../utils/AppError";
+import AppError from "@/shared/utils/AppError";
 
 const notFoundHandler = (req: Request) => {
   throw new AppError(`Route ${req.originalUrl} not found`, 404);

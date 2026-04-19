@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import AppError from "../../shared/utils/AppError";
+import AppError from "@/shared/utils/AppError";
 import { PostContent } from "./post.types";
 
 export interface PostDocument extends mongoose.Document {

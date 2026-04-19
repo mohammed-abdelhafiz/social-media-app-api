@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import * as postService from "./post.service";
 import { createPostDto, updatePostDto } from "./posts.dto";
 import mongoose from "mongoose";
-import AppError from "../../shared/utils/AppError";
+import AppError from "@/shared/utils/AppError";
 
 export const getFeedPosts = async (req: Request, res: Response) => {
   const page = parseInt(req.query.page as string) || 1;

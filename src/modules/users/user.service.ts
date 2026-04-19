@@ -1,14 +1,14 @@
 import mongoose from "mongoose";
 import User from "./User.model";
 import { UpdateUserProfileDto } from "./users.dto";
-import AppError from "../../shared/utils/AppError";
+import AppError from "@/shared/utils/AppError";
 import { Follow } from "./follow.model";
-import { deleteImageFromCloudinary } from "../../shared/utils/cloudinaryUtils";
-import Post from "../posts/Post.model";
-import { PostLike } from "../posts/PostLike.model";
+import { deleteImageFromCloudinary } from "@/shared/utils/cloudinaryUtils";
+import Post from "@/modules/posts/Post.model";
+import { PostLike } from "@/modules/posts/PostLike.model";
 import { getUserPostsArgs } from "./user.types";
-import notificationService from "../notifications/notification.service";
-import { NotificationType } from "../notifications/Notification.model";
+import notificationService from "@/modules/notifications/notification.service";
+import { NotificationType } from "@/modules/notifications/Notification.model";
 
 export const getFollowSuggestions = async ({
   currentUserId,

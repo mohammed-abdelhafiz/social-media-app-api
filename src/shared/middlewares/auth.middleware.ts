@@ -1,9 +1,9 @@
 import { NextFunction, Request, Response } from "express";
-import { verifyAccessToken } from "../utils/jwt";
-import AppError from "../utils/AppError";
-import Comment from "../../modules/comments/Comment.model";
-import Post from "../../modules/posts/Post.model";
-import User from "../../modules/users/User.model";
+import { verifyAccessToken } from "@/shared/utils/jwt";
+import AppError from "@/shared/utils/AppError";
+import Comment from "@/modules/comments/Comment.model";
+import Post from "@/modules/posts/Post.model";
+import User from "@/modules/users/User.model";
 import mongoose from "mongoose";
 
 export const authenticate = async (

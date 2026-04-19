@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import * as usersService from "./user.service";
 import { updateUserProfileDto } from "./users.dto";
 import mongoose from "mongoose";
-import AppError from "../../shared/utils/AppError";
+import AppError from "@/shared/utils/AppError";
 
 /**
  * @route GET /api/users/followSuggestions

@@ -1,18 +1,18 @@
 import mongoose from "mongoose";
 import Post from "./Post.model";
-import AppError from "../../shared/utils/AppError";
+import AppError from "@/shared/utils/AppError";
 import {
   CreatePostParams,
   GetFeedPostsParams,
   PostContent,
 } from "./post.types";
-import { Follow } from "../users/follow.model";
-import Comment from "../comments/Comment.model";
+import { Follow } from "@/modules/users/follow.model";
+import Comment from "@/modules/comments/Comment.model";
 import { PostLike } from "./PostLike.model";
-import { deleteImageFromCloudinary } from "../../shared/utils/cloudinaryUtils";
-import User from "../users/User.model";
-import notificationService from "../notifications/notification.service";
-import { NotificationType } from "../notifications/Notification.model";
+import { deleteImageFromCloudinary } from "@/shared/utils/cloudinaryUtils";
+import User from "@/modules/users/User.model";
+import notificationService from "@/modules/notifications/notification.service";
+import { NotificationType } from "@/modules/notifications/Notification.model";
 
 export const getFeedPosts = async ({
   page,

@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import * as commentsService from "./comment.service";
 import mongoose from "mongoose";
 import { createCommentDto, updateCommentDto } from "./comment.dto";
-import AppError from "../../shared/utils/AppError";
+import AppError from "@/shared/utils/AppError";
 
 /**
  * @route POST /api/posts/:postId/comments

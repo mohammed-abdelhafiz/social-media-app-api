@@ -1,13 +1,13 @@
 import mongoose from "mongoose";
 import Comment from "./Comment.model";
-import AppError from "../../shared/utils/AppError";
+import AppError from "@/shared/utils/AppError";
 import { CreateCommentDto, UpdateCommentDto } from "./comment.dto";
-import Post from "../posts/Post.model";
+import Post from "@/modules/posts/Post.model";
 import { CommentLike } from "./CommentLike.model";
 import { GetPostCommentsParams } from "./comment.types";
-import User from "../users/User.model";
-import notificationService from "../notifications/notification.service";
-import { NotificationType } from "../notifications/Notification.model";
+import User from "@/modules/users/User.model";
+import notificationService from "@/modules/notifications/notification.service";
+import { NotificationType } from "@/modules/notifications/Notification.model";
 
 export const createComment = async ({
   postId,

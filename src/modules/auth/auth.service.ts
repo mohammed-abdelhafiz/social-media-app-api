@@ -2,16 +2,16 @@ import bcrypt from "bcryptjs";
 
 import crypto from "crypto";
 import mongoose from "mongoose";
-import { generateTokens, verifyRefreshToken } from "../../shared/utils/jwt";
-import AppError from "../../shared/utils/AppError";
-import User from "../users/User.model";
+import { generateTokens, verifyRefreshToken } from "@/shared/utils/jwt";
+import AppError from "@/shared/utils/AppError";
+import User from "@/modules/users/User.model";
 import {
   RegisterDto,
   LoginDto,
   ForgotPasswordDto,
   ResetPasswordDto,
 } from "./auth.dto";
-import { sendResetPasswordEmail } from "../../shared/services/email.service";
+import { sendResetPasswordEmail } from "@/shared/services/email.service";
 
 export const register = async (body: RegisterDto) => {
   const userExists = await User.findOne({ email: body.email });
